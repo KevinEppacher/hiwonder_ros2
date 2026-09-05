@@ -12,6 +12,8 @@ services:
     volumes:
       - ..:/app
       - /tmp/.X11-unix:/tmp/.X11-unix
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
     environment:
       QT_X11_NO_MITSHM: 1
       DISPLAY: $DISPLAY
