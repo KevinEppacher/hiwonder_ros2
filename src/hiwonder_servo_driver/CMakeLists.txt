@@ -16,11 +16,54 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(ament_cmake REQUIRED)
 
 ############################################################
-# Declare Executables
+# Driver Library
+############################################################
+
+add_library(${PROJECT_NAME} SHARED
+    src/serial_port.cpp
+    src/hiwonder_bus.cpp
+    src/servo.cpp
+)
+
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+
+############################################################
+# Tools
 ############################################################
 
 add_executable(hiwonder-find-port
     tools/find_port.cpp
+)
+
+add_executable(hiwonder-scan
+    tools/scan.cpp
+)
+
+target_link_libraries(hiwonder-scan
+    PRIVATE
+        ${PROJECT_NAME}
+)
+
+add_executable(hiwonder-setup-motors
+    tools/setup_motors.cpp
+)
+
+target_link_libraries(hiwonder-setup-motors
+    PRIVATE
+        ${PROJECT_NAME}
+)
+
+add_executable(hiwonder-test-move
+    tools/test_move.cpp
+)
+
+target_link_libraries(hiwonder-test-move
+    PRIVATE
+        ${PROJECT_NAME}
 )
 
 ############################################################
@@ -28,18 +71,32 @@ add_executable(hiwonder-find-port
 ############################################################
 
 install(
-    TARGETS hiwonder-find-port
-    DESTINATION bin
+    TARGETS
+        ${PROJECT_NAME}
+        hiwonder-find-port
+        hiwonder-scan
+        hiwonder-setup-motors
+        hiwonder-test-move
+    EXPORT export_${PROJECT_NAME}
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
 )
-
-############################################################
-# Headers
-############################################################
-
 install(
     DIRECTORY include/
-    DESTINATION include/${PROJECT_NAME}
+    DESTINATION include
 )
+
+############################################################
+# Export
+############################################################
+
+ament_export_targets(
+    export_${PROJECT_NAME}
+    HAS_LIBRARY_TARGET
+)
+
+ament_export_include_directories(include)
 
 ############################################################
 # Finalization
