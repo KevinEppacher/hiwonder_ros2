@@ -5,12 +5,9 @@ FROM docker.io/osrf/ros:${ROS_DISTRO}-desktop-full
 ARG USERNAME=ubuntu
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-
-RUN if ! getent passwd "${USER_UID}" >/dev/null 2>&1; then \
-        groupadd --gid "${USER_GID}" "${USERNAME}" && \
-        useradd -s /bin/bash --uid "${USER_UID}" --gid "${USER_GID}" -m "${USERNAME}"; \
-    else \
-        echo "UID ${USER_UID} is already in use; choose a different USER_UID" >&2; exit 1; \
+RUN if ! id -u $USER_UID >/dev/null 2>&1; then \
+        groupadd --gid $USER_GID $USERNAME && \
+        useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME; \
     fi
 
 RUN apt-get update && \
@@ -23,9 +20,24 @@ USER $USERNAME
 RUN sudo apt update && sudo apt upgrade -y
 
 ########################################################
-# Custom installations (Nav2 focused)
+# Custom installations
 ########################################################
 
+# Install python3-pip for installing Python packages with pip
+RUN sudo apt update && \
+    sudo apt upgrade -y && \
+    sudo apt install -y python3-pip
+
+# We do not care about breaking system packages in this container
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
+# Install python packages from requirements.txt
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r /app/requirements.txt
+
+# Install ros ament lint packages
+RUN sudo apt update && sudo apt install -y \
+    ros-${ROS_DISTRO}-ament-lint
 
 ########################################################
 # End Custom installations
