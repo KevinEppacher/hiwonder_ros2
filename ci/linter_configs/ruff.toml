@@ -1,0 +1,26 @@
+line-length = 88
+indent-width = 4
+
+[lint]
+select = ["ALL"]
+ignore = [
+    # This rule complains about missing commas at end of lines. It collides with black
+    # and ruff's own formatter, so even the ruff documentation recommends to not use it.
+    "COM812",
+    # This collides with D211, and one had to be picked.
+    "D203",
+    # This collides with D212, and one had to be picked.
+    "D213",
+    # This rule forbids relative imports from parent packages in a sub-package. The rule
+    # seems a bit vague, says absolute imports are "better behaved", without defining what
+    # that means. On the other hand having to import the own parent package in a sub-package
+    # looks "weird" and also does not make it immediately clear that the code imported issues
+    # from the same package, what relative imports do. Therefore the check is disabled.
+    "TID252",
+]
+
+[lint.flake8-annotations]
+allow-star-arg-any = true
+
+[lint.pydocstyle]
+convention = "google"
