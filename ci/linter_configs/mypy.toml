@@ -1,0 +1,81 @@
+
+[tool.mypy]
+# Allow mypy to infer partial types within local scopes.
+local_partial_types = true
+
+# Enable strict mode as the baseline policy (collection of strict checks).
+strict = true
+
+# Enforce stricter equality checks (e.g., incompatible equality comparisons).
+strict_equality = true
+
+# Require explicit Optional for variables that can be None.
+warn_unused_configs = false
+
+# Extra guard to skip typical non-runtime paths when discovered by wrappers (e.g., launch files, test files, setup.py).
+exclude = '''(?x)(
+    (^|.*/)test/|
+    (^|.*/).*\.launch\.py$|
+    (^|.*/)setup\.py$
+)'''
+
+[[tool.mypy.overrides]]
+# ROS/launch/setuptools modules are commonly untyped in this environment.
+# Ignore missing stub/type information for these imports.
+module = [
+    "rclpy",
+    "rclpy.*",
+    "controller_manager_msgs",
+    "controller_manager_msgs.*",
+    "launch",
+    "launch.*",
+    "launch_ros",
+    "launch_ros.*",
+    "launch_testing",
+    "launch_testing.*",
+    "ament_index_python",
+    "ament_index_python.*",
+    "ament_copyright",
+    "ament_copyright.*",
+    "ament_flake8",
+    "ament_flake8.*",
+    "ament_pep257",
+    "ament_pep257.*",
+    "geometry_msgs",
+    "geometry_msgs.*",
+    "nav_msgs",
+    "nav_msgs.*",
+    "rcl_interfaces",
+    "rcl_interfaces.*",
+    "sensor_msgs",
+    "sensor_msgs.*",
+    "setuptools",
+    "std_msgs",
+    "std_msgs.*",
+    "tf2_ros",
+    "tf2_ros.*",
+    "tf_transformations",
+    "trajectory_msgs",
+    "trajectory_msgs.*",
+    "yaml",
+    "yaml.*",
+    "moveit_configs_utils",
+    "moveit_msgs.*",
+    "get_parameter_value.*",
+    "tf2_geometry_msgs",
+    "tf2_geometry_msgs.*",
+]
+
+# Suppress import errors for the above modules, which are often untyped or have missing stubs.
+ignore_missing_imports = true
+
+disable_error_code = [
+    "attr-defined",         # Allow access to attributes that may not be statically known (e.g., dynamic attributes in ROS messages).
+    "no-any-return",        # Allow functions to return Any without explicit annotation (e.g., test utilities, launch file callbacks).
+    "no-untyped-call"       # Allow calls to functions without type annotations (e.g., ROS APIs, test utilities).
+]
+
+disable_error_code = [
+    "attr-defined",         # Allow access to attributes that may not be statically known (e.g., dynamic attributes in ROS messages).
+    "no-untyped-call"       # Allow calls to functions without type annotations (e.g., ROS APIs, test utilities).
+]
