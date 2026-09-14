@@ -39,6 +39,9 @@ RUN pip install -r /app/requirements.txt
 RUN sudo apt update && sudo apt install -y \
     ros-${ROS_DISTRO}-ament-lint
 
+RUN sudo apt update && sudo apt install -y \
+    ros-${ROS_DISTRO}-ros2-control
+
 ########################################################
 # End Custom installations
 ########################################################

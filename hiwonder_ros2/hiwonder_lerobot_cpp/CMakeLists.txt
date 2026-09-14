@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(hiwonder_servo_driver)
+project(hiwonder_lerobot_cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
@@ -14,16 +14,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ############################################################
 
 find_package(ament_cmake REQUIRED)
+find_package(hiwonder_servo_driver REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 ############################################################
-# Driver Library
+# Library
 ############################################################
 
 add_library(${PROJECT_NAME} SHARED
-    src/serial_port.cpp
-    src/hiwonder_bus.cpp
-    src/servo.cpp
-    src/motor.cpp
+    src/robot.cpp
+    src/leader.cpp
+    src/follower.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -32,30 +33,40 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include>
 )
 
+ament_target_dependencies(${PROJECT_NAME}
+    hiwonder_servo_driver
+)
+
 ############################################################
 # Tools
 ############################################################
 
-add_executable(hiwonder-find-port
-    tools/find_port.cpp
+add_executable(lerobot-test-move
+    tools/test_move.cpp
 )
 
-add_executable(hiwonder-scan
-    tools/scan.cpp
-)
-
-target_link_libraries(hiwonder-scan
+target_link_libraries(lerobot-test-move
     PRIVATE
         ${PROJECT_NAME}
 )
 
-add_executable(hiwonder-setup-motors
-    tools/setup_motors.cpp
+add_executable(lerobot-torque-mode
+    tools/torque_mode.cpp
 )
 
-target_link_libraries(hiwonder-setup-motors
+target_link_libraries(lerobot-torque-mode
     PRIVATE
         ${PROJECT_NAME}
+)
+
+add_executable(lerobot-calibrate
+    tools/calibrate.cpp
+)
+
+target_link_libraries(lerobot-calibrate
+    PRIVATE
+        ${PROJECT_NAME}
+        SQLite::SQLite3
 )
 
 ############################################################
@@ -72,9 +83,9 @@ install(
 
 install(
     TARGETS
-        hiwonder-find-port
-        hiwonder-scan
-        hiwonder-setup-motors
+        lerobot-test-move
+        lerobot-torque-mode
+        lerobot-calibrate
     RUNTIME DESTINATION bin
 )
 
@@ -88,37 +99,12 @@ install(
 ############################################################
 
 if(BUILD_TESTING)
-    find_package(ament_cmake_gtest REQUIRED)
     find_package(ament_lint_auto REQUIRED)
 
     set(ament_cmake_copyright_FOUND TRUE)
     set(ament_cmake_cpplint_FOUND TRUE)
 
     ament_lint_auto_find_test_dependencies()
-
-    # ------------------------------------------------------------
-    # Unit Tests for test_checksum
-    # ------------------------------------------------------------
-
-    ament_add_gtest(test_checksum
-        test/test_checksum.cpp
-    )
-
-    target_link_libraries(test_checksum
-        ${PROJECT_NAME}
-    )
-
-    # ------------------------------------------------------------
-    # Unit Tests for test_hiwonder_bus
-    # ------------------------------------------------------------
-
-    ament_add_gtest(test_hiwonder_bus
-        test/test_hiwonder_bus.cpp
-    )
-
-    target_link_libraries(test_hiwonder_bus
-        ${PROJECT_NAME}
-    )
 endif()
 
 ############################################################
@@ -128,6 +114,10 @@ endif()
 ament_export_targets(
     export_${PROJECT_NAME}
     HAS_LIBRARY_TARGET
+)
+
+ament_export_dependencies(
+    hiwonder_servo_driver
 )
 
 ament_export_include_directories(include)
