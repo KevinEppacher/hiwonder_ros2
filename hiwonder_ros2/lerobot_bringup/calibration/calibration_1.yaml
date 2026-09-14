@@ -1,0 +1,30 @@
+shoulder_pan:
+  servo_id: 1
+  homing_offset: 1749
+  range_min: 1948
+  range_max: 1948
+shoulder_lift:
+  servo_id: 2
+  homing_offset: 2039
+  range_min: 864
+  range_max: 864
+elbow_flex:
+  servo_id: 3
+  homing_offset: 2266
+  range_min: 3248
+  range_max: 3248
+wrist_flex:
+  servo_id: 4
+  homing_offset: 1461
+  range_min: 2233
+  range_max: 2233
+wrist_roll:
+  servo_id: 5
+  homing_offset: 3710
+  range_min: 3570
+  range_max: 3570
+gripper:
+  servo_id: 6
+  homing_offset: 1595
+  range_min: 2384
+  range_max: 2384

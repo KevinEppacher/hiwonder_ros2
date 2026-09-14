@@ -15,7 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(ament_cmake REQUIRED)
 find_package(hiwonder_servo_driver REQUIRED)
-find_package(SQLite3 REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 ############################################################
 # Library
@@ -66,7 +66,7 @@ add_executable(lerobot-calibrate
 target_link_libraries(lerobot-calibrate
     PRIVATE
         ${PROJECT_NAME}
-        SQLite::SQLite3
+        yaml-cpp
 )
 
 ############################################################

@@ -16,6 +16,7 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -23,8 +24,8 @@
 #include <vector>
 
 #include <poll.h>
-#include <sqlite3.h>
 #include <unistd.h>
+#include <yaml-cpp/yaml.h>
 
 #include "hiwonder_lerobot_cpp/follower.hpp"
 
@@ -287,233 +288,58 @@ bool recordRanges(
   return true;
 }
 
-bool executeSql(
-  sqlite3 * database,
-  const char * sql)
-{
-  char * error_message = nullptr;
-
-  if (sqlite3_exec(
-      database,
-      sql,
-      nullptr,
-      nullptr,
-      &error_message) != SQLITE_OK)
-  {
-    std::cerr
-      << "SQLite error: "
-      << error_message
-      << '\n';
-
-    sqlite3_free(error_message);
-
-    return false;
-  }
-
-  return true;
-}
-
-bool hasHomingOffsetColumn(
-  sqlite3 * database)
-{
-  constexpr const char * kSql =
-    "PRAGMA table_info(joint_calibration);";
-
-  sqlite3_stmt * statement = nullptr;
-
-  if (sqlite3_prepare_v2(
-      database,
-      kSql,
-      -1,
-      &statement,
-      nullptr) != SQLITE_OK)
-  {
-    return false;
-  }
-
-  bool found = false;
-
-  while (sqlite3_step(statement) == SQLITE_ROW) {
-    const auto * column_name =
-      reinterpret_cast<const char *>(
-      sqlite3_column_text(statement, 1));
-
-    if (
-      column_name != nullptr &&
-      std::string(column_name) == "homing_offset")
-    {
-      found = true;
-      break;
-    }
-  }
-
-  sqlite3_finalize(statement);
-
-  return found;
-}
-
-bool initializeDatabase(
-  sqlite3 * database)
-{
-  constexpr const char * kCreateTableSql =
-    "CREATE TABLE IF NOT EXISTS joint_calibration ("
-    "servo_id INTEGER PRIMARY KEY,"
-    "joint_name TEXT NOT NULL,"
-    "homing_offset INTEGER NOT NULL,"
-    "range_min INTEGER NOT NULL,"
-    "range_max INTEGER NOT NULL"
-    ");";
-
-  if (!executeSql(
-      database,
-      kCreateTableSql))
-  {
-    return false;
-  }
-
-  if (!hasHomingOffsetColumn(database)) {
-    constexpr const char * kMigrationSql =
-      "ALTER TABLE joint_calibration "
-      "ADD COLUMN homing_offset INTEGER NOT NULL DEFAULT 0;";
-
-    if (!executeSql(
-        database,
-        kMigrationSql))
-    {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 bool saveCalibration(
-  const std::string & database_path,
+  const std::string & path,
   const std::vector<JointCalibration> & calibration)
 {
-  sqlite3 * database = nullptr;
-
-  if (sqlite3_open(
-      database_path.c_str(),
-      &database) != SQLITE_OK)
-  {
+  if (calibration.size() != kJoints.size()) {
     std::cerr
-      << "Failed to open calibration database: "
-      << sqlite3_errmsg(database)
-      << '\n';
-
-    if (database != nullptr) {
-      sqlite3_close(database);
-    }
+      << "Calibration data does not match joint count.\n";
 
     return false;
   }
 
-  if (!initializeDatabase(database)) {
-    sqlite3_close(database);
-    return false;
-  }
-
-  constexpr const char * kInsertSql =
-    "INSERT INTO joint_calibration "
-    "(servo_id, joint_name, homing_offset, range_min, range_max) "
-    "VALUES (?, ?, ?, ?, ?) "
-    "ON CONFLICT(servo_id) DO UPDATE SET "
-    "joint_name = excluded.joint_name, "
-    "homing_offset = excluded.homing_offset, "
-    "range_min = excluded.range_min, "
-    "range_max = excluded.range_max;";
-
-  sqlite3_stmt * statement = nullptr;
-
-  if (sqlite3_prepare_v2(
-      database,
-      kInsertSql,
-      -1,
-      &statement,
-      nullptr) != SQLITE_OK)
-  {
-    std::cerr
-      << "Failed to prepare calibration statement: "
-      << sqlite3_errmsg(database)
-      << '\n';
-
-    sqlite3_close(database);
-
-    return false;
-  }
-
-  if (!executeSql(
-      database,
-      "BEGIN TRANSACTION;"))
-  {
-    sqlite3_finalize(statement);
-    sqlite3_close(database);
-    return false;
-  }
+  YAML::Node root;
 
   for (std::size_t i = 0; i < calibration.size(); ++i) {
-    sqlite3_bind_int(
-      statement,
-      1,
-      kJoints[i].servo_id);
+    YAML::Node joint;
 
-    sqlite3_bind_text(
-      statement,
-      2,
-      kJoints[i].name,
-      -1,
-      SQLITE_STATIC);
+    joint["servo_id"] =
+      static_cast<unsigned int>(kJoints[i].servo_id);
 
-    sqlite3_bind_int(
-      statement,
-      3,
-      calibration[i].homing_offset);
+    joint["homing_offset"] =
+      calibration[i].homing_offset;
 
-    sqlite3_bind_int(
-      statement,
-      4,
-      calibration[i].range_min);
+    joint["range_min"] =
+      calibration[i].range_min;
 
-    sqlite3_bind_int(
-      statement,
-      5,
-      calibration[i].range_max);
+    joint["range_max"] =
+      calibration[i].range_max;
 
-    if (sqlite3_step(statement) != SQLITE_DONE) {
-      std::cerr
-        << "Failed to save calibration for "
-        << kJoints[i].name
-        << ": "
-        << sqlite3_errmsg(database)
-        << '\n';
-
-      sqlite3_finalize(statement);
-
-      executeSql(
-        database,
-        "ROLLBACK;");
-
-      sqlite3_close(database);
-
-      return false;
-    }
-
-    sqlite3_reset(statement);
-    sqlite3_clear_bindings(statement);
+    root[kJoints[i].name] = joint;
   }
 
-  sqlite3_finalize(statement);
+  std::ofstream output(path);
 
-  if (!executeSql(
-      database,
-      "COMMIT;"))
-  {
-    sqlite3_close(database);
+  if (!output.is_open()) {
+    std::cerr
+      << "Failed to open calibration file: "
+      << path
+      << '\n';
+
     return false;
   }
 
-  sqlite3_close(database);
+  output << root;
+
+  if (!output.good()) {
+    std::cerr
+      << "Failed to write calibration file: "
+      << path
+      << '\n';
+
+    return false;
+  }
 
   return true;
 }
@@ -525,17 +351,17 @@ int main(int argc, char ** argv)
   if (argc != 3) {
     std::cerr
       << "Usage:\n"
-      << "  lerobot-calibrate <port> <database>\n"
+      << "  lerobot-calibrate <port> <calibration.yaml>\n"
       << "\n"
       << "Example:\n"
       << "  lerobot-calibrate /dev/ttyACM0 "
-      << "/app/src/lerobot_bringup/calibration/calibration.db\n";
+      << "/app/config/calibration.yaml\n";
 
     return 1;
   }
 
   const std::string port = argv[1];
-  const std::string database_path = argv[2];
+  const std::string calibration_path = argv[2];
 
   hiwonder::Follower robot(port);
 
@@ -598,15 +424,15 @@ int main(int argc, char ** argv)
   printCalibration(calibration);
 
   std::cout
-    << "\nCalibration database:\n"
-    << database_path
+    << "\nCalibration file:\n"
+    << calibration_path
     << "\n\n"
     << "Press ENTER to save calibration.";
 
   waitForEnter();
 
   if (!saveCalibration(
-      database_path,
+      calibration_path,
       calibration))
   {
     return 1;
