@@ -12,28 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
 #include <array>
-#include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include <thread>
 #include <vector>
 
-#include <poll.h>
-#include <unistd.h>
 #include <yaml-cpp/yaml.h>
 
 #include "hiwonder_lerobot_cpp/follower.hpp"
 
 namespace
 {
-
-constexpr auto kUpdatePeriod =
-  std::chrono::milliseconds(100);
 
 struct Joint
 {
@@ -43,10 +35,8 @@ struct Joint
 
 struct JointCalibration
 {
-  uint16_t homing_offset;
-  uint16_t range_min;
-  uint16_t position;
-  uint16_t range_max;
+  uint16_t lower_position;
+  uint16_t upper_position;
 };
 
 constexpr std::array<Joint, 6> kJoints{{
@@ -58,158 +48,23 @@ constexpr std::array<Joint, 6> kJoints{{
   {"gripper", 6}
 }};
 
-void clearTerminal()
-{
-  std::cout << "\033[2J\033[H";
-}
-
 void waitForEnter()
 {
   std::string input;
   std::getline(std::cin, input);
 }
 
-bool enterPressed()
-{
-  pollfd descriptor{};
-  descriptor.fd = STDIN_FILENO;
-  descriptor.events = POLLIN;
-
-  const int result = poll(
-    &descriptor,
-    1,
-    0);
-
-  if (result <= 0) {
-    return false;
-  }
-
-  if ((descriptor.revents & POLLIN) == 0) {
-    return false;
-  }
-
-  std::string input;
-  std::getline(std::cin, input);
-
-  return true;
-}
-
-void printZeroPositions(
-  const std::vector<uint16_t> & positions)
-{
-  clearTerminal();
-
-  std::cout
-    << "LeRobot Calibration\n"
-    << "====================\n\n"
-    << "Zero positions recorded.\n\n";
-
-  std::cout
-    << std::left
-    << std::setw(18) << "NAME"
-    << std::right
-    << std::setw(10) << "OFFSET"
-    << '\n';
-
-  std::cout
-    << "----------------------------\n";
-
-  for (std::size_t i = 0; i < positions.size(); ++i) {
-    std::cout
-      << std::left
-      << std::setw(18) << kJoints[i].name
-      << std::right
-      << std::setw(10) << positions[i]
-      << '\n';
-  }
-}
-
-void printStates(
-  const std::vector<JointCalibration> & calibration)
-{
-  clearTerminal();
-
-  std::cout
-    << "LeRobot Calibration\n"
-    << "====================\n\n"
-    << "Recording joint ranges.\n"
-    << "Move every joint through its full range of motion.\n"
-    << "Press ENTER when finished.\n\n";
-
-  std::cout
-    << std::left
-    << std::setw(18) << "NAME"
-    << std::right
-    << std::setw(10) << "OFFSET"
-    << std::setw(8) << "MIN"
-    << std::setw(8) << "POS"
-    << std::setw(8) << "MAX"
-    << '\n';
-
-  std::cout
-    << "----------------------------------------------------\n";
-
-  for (std::size_t i = 0; i < calibration.size(); ++i) {
-    std::cout
-      << std::left
-      << std::setw(18) << kJoints[i].name
-      << std::right
-      << std::setw(10) << calibration[i].homing_offset
-      << std::setw(8) << calibration[i].range_min
-      << std::setw(8) << calibration[i].position
-      << std::setw(8) << calibration[i].range_max
-      << '\n';
-  }
-
-  std::cout.flush();
-}
-
-void printCalibration(
-  const std::vector<JointCalibration> & calibration)
-{
-  clearTerminal();
-
-  std::cout
-    << "LeRobot Calibration\n"
-    << "====================\n\n"
-    << "Calibration complete.\n\n";
-
-  std::cout
-    << std::left
-    << std::setw(18) << "NAME"
-    << std::right
-    << std::setw(10) << "OFFSET"
-    << std::setw(8) << "MIN"
-    << std::setw(8) << "MAX"
-    << std::setw(10) << "RANGE"
-    << '\n';
-
-  std::cout
-    << "------------------------------------------------------\n";
-
-  for (std::size_t i = 0; i < calibration.size(); ++i) {
-    const uint32_t range =
-      static_cast<uint32_t>(calibration[i].range_max) -
-      static_cast<uint32_t>(calibration[i].range_min);
-
-    std::cout
-      << std::left
-      << std::setw(18) << kJoints[i].name
-      << std::right
-      << std::setw(10) << calibration[i].homing_offset
-      << std::setw(8) << calibration[i].range_min
-      << std::setw(8) << calibration[i].range_max
-      << std::setw(10) << range
-      << '\n';
-  }
-}
-
-bool recordZeroPositions(
+bool readPosition(
   hiwonder::Follower & robot,
-  std::vector<uint16_t> & positions)
+  std::size_t index,
+  uint16_t & position)
 {
+  std::vector<uint16_t> positions;
+
   if (!robot.readPositions(positions)) {
-    std::cerr << "Failed to read zero positions.\n";
+    std::cerr
+      << "Failed to read motor positions.\n";
+
     return false;
   }
 
@@ -222,70 +77,115 @@ bool recordZeroPositions(
     return false;
   }
 
+  position = positions[index];
+
   return true;
 }
 
-bool recordRanges(
+bool calibrateJoint(
   hiwonder::Follower & robot,
-  const std::vector<uint16_t> & homing_offsets,
-  std::vector<JointCalibration> & calibration)
+  std::size_t index,
+  JointCalibration & calibration)
 {
-  std::vector<uint16_t> positions;
+  const auto & joint = kJoints[index];
 
-  if (!robot.readPositions(positions)) {
-    std::cerr << "Failed to read initial motor positions.\n";
+  std::cout
+    << "\nJoint "
+    << index + 1
+    << "/"
+    << kJoints.size()
+    << ": "
+    << joint.name
+    << " (servo "
+    << static_cast<unsigned int>(joint.servo_id)
+    << ")\n"
+    << "----------------------------------------\n";
+
+  std::cout
+    << "Move the joint to its URDF LOWER limit.\n"
+    << "Press ENTER to record the position.";
+
+  waitForEnter();
+
+  if (!readPosition(
+      robot,
+      index,
+      calibration.lower_position))
+  {
     return false;
   }
 
-  if (positions.size() != homing_offsets.size()) {
-    std::cerr << "Motor count does not match calibration data.\n";
+  std::cout
+    << "Recorded lower position: "
+    << calibration.lower_position
+    << "\n\n";
+
+  std::cout
+    << "Move the joint to its URDF UPPER limit.\n"
+    << "Press ENTER to record the position.";
+
+  waitForEnter();
+
+  if (!readPosition(
+      robot,
+      index,
+      calibration.upper_position))
+  {
     return false;
   }
 
-  calibration.clear();
-  calibration.reserve(positions.size());
+  std::cout
+    << "Recorded upper position: "
+    << calibration.upper_position
+    << '\n';
 
-  for (std::size_t i = 0; i < positions.size(); ++i) {
-    calibration.push_back({
-      homing_offsets[i],
-      positions[i],
-      positions[i],
-      positions[i]
-    });
-  }
+  if (calibration.lower_position ==
+    calibration.upper_position)
+  {
+    std::cerr
+      << "Lower and upper positions are identical for joint '"
+      << joint.name
+      << "'.\n";
 
-  while (true) {
-    if (enterPressed()) {
-      break;
-    }
-
-    if (!robot.readPositions(positions)) {
-      std::cerr << "Failed to read motor positions.\n";
-      return false;
-    }
-
-    for (std::size_t i = 0; i < positions.size(); ++i) {
-      calibration[i].position =
-        positions[i];
-
-      calibration[i].range_min =
-        std::min(
-        calibration[i].range_min,
-        positions[i]);
-
-      calibration[i].range_max =
-        std::max(
-        calibration[i].range_max,
-        positions[i]);
-    }
-
-    printStates(calibration);
-
-    std::this_thread::sleep_for(
-      kUpdatePeriod);
+    return false;
   }
 
   return true;
+}
+
+void printCalibration(
+  const std::vector<JointCalibration> & calibration)
+{
+  std::cout
+    << "\n\nLeRobot Calibration\n"
+    << "====================\n\n";
+
+  std::cout
+    << std::left
+    << std::setw(18) << "NAME"
+    << std::right
+    << std::setw(10) << "SERVO"
+    << std::setw(12) << "LOWER"
+    << std::setw(12) << "UPPER"
+    << '\n';
+
+  std::cout
+    << "----------------------------------------------------\n";
+
+  for (std::size_t i = 0; i < calibration.size(); ++i) {
+    std::cout
+      << std::left
+      << std::setw(18) << kJoints[i].name
+      << std::right
+      << std::setw(10)
+      << static_cast<unsigned int>(
+      kJoints[i].servo_id)
+      << std::setw(12)
+      << calibration[i].lower_position
+      << std::setw(12)
+      << calibration[i].upper_position
+      << '\n';
+  }
 }
 
 bool saveCalibration(
@@ -305,16 +205,14 @@ bool saveCalibration(
     YAML::Node joint;
 
     joint["servo_id"] =
-      static_cast<unsigned int>(kJoints[i].servo_id);
+      static_cast<unsigned int>(
+      kJoints[i].servo_id);
 
-    joint["homing_offset"] =
-      calibration[i].homing_offset;
+    joint["lower_position"] =
+      calibration[i].lower_position;
 
-    joint["range_min"] =
-      calibration[i].range_min;
-
-    joint["range_max"] =
-      calibration[i].range_max;
+    joint["upper_position"] =
+      calibration[i].upper_position;
 
     root[kJoints[i].name] = joint;
   }
@@ -330,7 +228,7 @@ bool saveCalibration(
     return false;
   }
 
-  output << root;
+  output << root << '\n';
 
   if (!output.good()) {
     std::cerr
@@ -355,7 +253,7 @@ int main(int argc, char ** argv)
       << "\n"
       << "Example:\n"
       << "  lerobot-calibrate /dev/ttyACM0 "
-      << "/app/config/calibration.yaml\n";
+      << "/app/src/lerobot_bringup/calibration/calibration.yaml\n";
 
     return 1;
   }
@@ -371,7 +269,9 @@ int main(int argc, char ** argv)
     << "Connecting to robot...\n";
 
   if (!robot.connect()) {
-    std::cerr << "Failed to connect to robot.\n";
+    std::cerr
+      << "Failed to connect to robot.\n";
+
     return 1;
   }
 
@@ -380,45 +280,37 @@ int main(int argc, char ** argv)
     << "Disabling motor torque...\n";
 
   if (!robot.setTorqueEnabled(false)) {
-    std::cerr << "Failed to disable motor torque.\n";
+    std::cerr
+      << "Failed to disable motor torque.\n";
+
     return 1;
   }
 
   std::cout
     << "Torque disabled.\n\n"
-    << "Step 1: Zero Position\n"
-    << "---------------------\n"
-    << "Move the robot into its defined zero pose.\n"
-    << "Press ENTER to record the zero positions.";
+    << "Each joint will now be calibrated individually.\n"
+    << "For each joint:\n"
+    << "  1. Move it to the position corresponding to "
+    << "the URDF lower limit.\n"
+    << "  2. Press ENTER.\n"
+    << "  3. Move it to the position corresponding to "
+    << "the URDF upper limit.\n"
+    << "  4. Press ENTER.\n\n"
+    << "Press ENTER to begin.";
 
   waitForEnter();
 
-  std::vector<uint16_t> homing_offsets;
+  std::vector<JointCalibration> calibration(
+    kJoints.size());
 
-  if (!recordZeroPositions(
-      robot,
-      homing_offsets))
-  {
-    return 1;
-  }
-
-  printZeroPositions(homing_offsets);
-
-  std::cout
-    << "\nStep 2: Range Calibration\n"
-    << "-------------------------\n"
-    << "Press ENTER to start recording.";
-
-  waitForEnter();
-
-  std::vector<JointCalibration> calibration;
-
-  if (!recordRanges(
-      robot,
-      homing_offsets,
-      calibration))
-  {
-    return 1;
+  for (std::size_t i = 0; i < kJoints.size(); ++i) {
+    if (!calibrateJoint(
+        robot,
+        i,
+        calibration[i]))
+    {
+      return 1;
+    }
   }
 
   printCalibration(calibration);
