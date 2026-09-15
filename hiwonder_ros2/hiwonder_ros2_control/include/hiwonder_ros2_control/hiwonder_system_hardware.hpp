@@ -78,6 +78,14 @@ private:
     double upper_limit;
   };
 
+  [[nodiscard]] double rawToPosition(
+    const JointConfig & joint,
+    uint16_t raw_position) const;
+
+  [[nodiscard]] uint16_t positionToRaw(
+    const JointConfig & joint,
+    double position) const;
+
   std::string port_;
   std::string calibration_file_;
 

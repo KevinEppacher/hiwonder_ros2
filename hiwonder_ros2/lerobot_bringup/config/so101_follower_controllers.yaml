@@ -4,3 +4,18 @@ controller_manager:
 
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
+
+    position_controller:
+      type: forward_command_controller/ForwardCommandController
+
+position_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan
+      - shoulder_lift
+      - elbow_flex
+      - wrist_flex
+      - wrist_roll
+      - gripper
+
+    interface_name: position

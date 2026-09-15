@@ -14,12 +14,15 @@
 
 #include "hiwonder_ros2_control/hiwonder_system_hardware.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "hiwonder_servo_driver/registers.hpp"
@@ -77,7 +80,8 @@ HiwonderSystemHardware::on_init(
   std::unordered_set<uint8_t> servo_ids;
 
   for (const auto & joint : info_.joints) {
-    const YAML::Node calibration_joint = calibration[joint.name];
+    const YAML::Node calibration_joint =
+      calibration[joint.name];
 
     if (!calibration_joint) {
       RCLCPP_ERROR(
@@ -255,6 +259,51 @@ HiwonderSystemHardware::CallbackReturn
 HiwonderSystemHardware::on_activate(
   const rclcpp_lifecycle::State &)
 {
+  if (!bus_) {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Cannot activate hardware: bus is not configured");
+
+    return CallbackReturn::ERROR;
+  }
+
+  /*
+   * Initialize every position command with the current measured
+   * position. This prevents the hardware from jumping to an
+   * uninitialized command when the write loop starts.
+   */
+  for (const auto & joint : joints_) {
+    uint16_t raw_position = 0;
+
+    if (!bus_->readWord(
+        joint.servo_id,
+        hiwonder::reg::kCurrentPosition,
+        raw_position))
+    {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Failed to read initial position from joint '%s'",
+        joint.name.c_str());
+
+      return CallbackReturn::ERROR;
+    }
+
+    const double position =
+      rawToPosition(joint, raw_position);
+
+    set_state(
+      joint.name + "/" + hardware_interface::HW_IF_POSITION,
+      position);
+
+    set_command(
+      joint.name + "/" + hardware_interface::HW_IF_POSITION,
+      position);
+  }
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Initialized position commands from current hardware state");
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -263,6 +312,68 @@ HiwonderSystemHardware::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   return CallbackReturn::SUCCESS;
+}
+
+double HiwonderSystemHardware::rawToPosition(
+  const JointConfig & joint,
+  uint16_t raw_position) const
+{
+  const double raw_lower =
+    static_cast<double>(joint.lower_position);
+
+  const double raw_upper =
+    static_cast<double>(joint.upper_position);
+
+  const double normalized =
+    (static_cast<double>(raw_position) - raw_lower) /
+    (raw_upper - raw_lower);
+
+  return
+    joint.lower_limit +
+    normalized *
+    (joint.upper_limit - joint.lower_limit);
+}
+
+uint16_t HiwonderSystemHardware::positionToRaw(
+  const JointConfig & joint,
+  double position) const
+{
+  const double clamped_position =
+    std::clamp(
+    position,
+    joint.lower_limit,
+    joint.upper_limit);
+
+  const double normalized =
+    (clamped_position - joint.lower_limit) /
+    (joint.upper_limit - joint.lower_limit);
+
+  const double raw =
+    static_cast<double>(joint.lower_position) +
+    normalized *
+    (
+    static_cast<double>(joint.upper_position) -
+    static_cast<double>(joint.lower_position)
+    );
+
+  const double raw_min =
+    static_cast<double>(
+    std::min(
+      joint.lower_position,
+      joint.upper_position));
+
+  const double raw_max =
+    static_cast<double>(
+    std::max(
+      joint.lower_position,
+      joint.upper_position));
+
+  return static_cast<uint16_t>(
+    std::lround(
+      std::clamp(
+        raw,
+        raw_min,
+        raw_max)));
 }
 
 hardware_interface::return_type
@@ -295,20 +406,8 @@ HiwonderSystemHardware::read(
       return hardware_interface::return_type::ERROR;
     }
 
-    const double raw_lower =
-      static_cast<double>(joint.lower_position);
-
-    const double raw_upper =
-      static_cast<double>(joint.upper_position);
-
-    const double normalized =
-      (static_cast<double>(raw_position) - raw_lower) /
-      (raw_upper - raw_lower);
-
     const double position =
-      joint.lower_limit +
-      normalized *
-      (joint.upper_limit - joint.lower_limit);
+      rawToPosition(joint, raw_position);
 
     set_state(
       joint.name + "/" + hardware_interface::HW_IF_POSITION,
@@ -323,9 +422,82 @@ HiwonderSystemHardware::write(
   const rclcpp::Time &,
   const rclcpp::Duration &)
 {
-  // Position commands are intentionally not sent yet.
-  // Hardware write support will be implemented after
-  // position feedback has been validated.
+  if (!bus_) {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Cannot write hardware: bus is not configured");
+
+    return hardware_interface::return_type::ERROR;
+  }
+
+  std::vector<uint8_t> ids;
+  std::vector<uint8_t> data;
+
+  ids.reserve(joints_.size());
+  data.reserve(joints_.size() * 6);
+
+  for (const auto & joint : joints_) {
+    const double command =
+      get_command(
+      joint.name + "/" + hardware_interface::HW_IF_POSITION);
+
+    if (!std::isfinite(command)) {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Invalid position command for joint '%s'",
+        joint.name.c_str());
+
+      return hardware_interface::return_type::ERROR;
+    }
+
+    const uint16_t raw_position =
+      positionToRaw(joint, command);
+
+    ids.push_back(joint.servo_id);
+
+    /*
+     * HiWonder target position consists of:
+     *
+     *   position : 2 bytes
+     *   time     : 2 bytes
+     *   speed    : 2 bytes
+     *
+     * All values are little-endian.
+     */
+    constexpr uint16_t kMoveTimeMs = 0;
+    constexpr uint16_t kMoveSpeed = 0;
+
+    data.push_back(
+      static_cast<uint8_t>(raw_position & 0xFF));
+
+    data.push_back(
+      static_cast<uint8_t>((raw_position >> 8) & 0xFF));
+
+    data.push_back(
+      static_cast<uint8_t>(kMoveTimeMs & 0xFF));
+
+    data.push_back(
+      static_cast<uint8_t>((kMoveTimeMs >> 8) & 0xFF));
+
+    data.push_back(
+      static_cast<uint8_t>(kMoveSpeed & 0xFF));
+
+    data.push_back(
+      static_cast<uint8_t>((kMoveSpeed >> 8) & 0xFF));
+  }
+
+  if (!bus_->syncWrite(
+      hiwonder::reg::kTargetPosition,
+      6,
+      ids,
+      data))
+  {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Failed to write synchronized joint positions");
+
+    return hardware_interface::return_type::ERROR;
+  }
 
   return hardware_interface::return_type::OK;
 }

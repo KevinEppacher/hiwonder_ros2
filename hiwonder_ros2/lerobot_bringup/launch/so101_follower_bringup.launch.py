@@ -92,6 +92,17 @@ def generate_launch_description():
         ],
         output="screen",
     )
+    
+    position_controller = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "position_controller",
+            "--controller-manager",
+            "/controller_manager",
+        ],
+        output="screen",
+    )
 
     return LaunchDescription(
         [
@@ -99,5 +110,6 @@ def generate_launch_description():
             robot_state_publisher,
             controller_manager,
             joint_state_broadcaster,
+            position_controller,
         ]
     )
