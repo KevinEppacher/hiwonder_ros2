@@ -68,12 +68,19 @@ private:
   struct JointConfig
   {
     std::string name;
+
     uint8_t servo_id;
-    double offset;
-    double direction;
+
+    uint16_t lower_position;
+    uint16_t upper_position;
+
+    double lower_limit;
+    double upper_limit;
   };
 
   std::string port_;
+  std::string calibration_file_;
+
   uint32_t baud_rate_{1000000};
 
   std::vector<JointConfig> joints_;

@@ -53,7 +53,8 @@ RUN sudo apt update && sudo apt install -y \
     ros-${ROS_DISTRO}-tf-transformations \
     ros-${ROS_DISTRO}-rqt \
     ros-${ROS_DISTRO}-rqt-common-plugins \
-    ros-${ROS_DISTRO}-urdf
+    ros-${ROS_DISTRO}-urdf \
+    ros-${ROS_DISTRO}-joint-state-broadcaster
 
 ########################################################
 # End Custom installations

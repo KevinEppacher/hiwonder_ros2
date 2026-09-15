@@ -253,7 +253,7 @@ int main(int argc, char ** argv)
       << "\n"
       << "Example:\n"
       << "  lerobot-calibrate /dev/ttyACM0 "
-      << "/app/src/lerobot_bringup/calibration/calibration.yaml\n";
+      << "/app/src/so101_follower_description/calibration/calibration.yaml\n";
 
     return 1;
   }

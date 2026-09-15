@@ -19,6 +19,7 @@ find_package(hiwonder_servo_driver REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 ############################################################
 # Build
@@ -40,6 +41,10 @@ ament_target_dependencies(${PROJECT_NAME}
     pluginlib
     rclcpp
     rclcpp_lifecycle
+)
+
+target_link_libraries(${PROJECT_NAME}
+    yaml-cpp
 )
 
 pluginlib_export_plugin_description_file(
@@ -94,6 +99,7 @@ ament_export_dependencies(
     pluginlib
     rclcpp
     rclcpp_lifecycle
+    yaml-cpp
 )
 
 ############################################################

@@ -17,37 +17,14 @@ find_package(ament_cmake REQUIRED)
 find_package(hiwonder_servo_driver REQUIRED)
 
 ############################################################
-# Build
-############################################################
-
-############################################################
-# Installation
-############################################################
-
-install(
-    DIRECTORY include/
-    DESTINATION include
-)
-
-############################################################
-# Linting and Testing
-############################################################
-
-if(BUILD_TESTING)
-    find_package(ament_lint_auto REQUIRED)
-
-    set(ament_cmake_copyright_FOUND TRUE)
-    set(ament_cmake_cpplint_FOUND TRUE)
-
-    ament_lint_auto_find_test_dependencies()
-endif()
-
-############################################################
-# Export
-############################################################
-
-############################################################
 # Finalization
 ############################################################
+
+# Install launch files
+install(DIRECTORY
+launch
+config
+DESTINATION share/${PROJECT_NAME}
+)
 
 ament_package()
