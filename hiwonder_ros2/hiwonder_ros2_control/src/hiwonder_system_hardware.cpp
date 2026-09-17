@@ -205,6 +205,28 @@ HiwonderSystemHardware::on_init(
       config.upper_limit);
   }
 
+  if (!get_node()) {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Framework-managed hardware node is not available");
+
+    return CallbackReturn::ERROR;
+  }
+
+  guiding_mode_service_ =
+    get_node()->create_service<std_srvs::srv::SetBool>(
+    "~/guiding_mode",
+    [this](
+      const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+      std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+    {
+      guidingModeCallback(request, response);
+    });
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Guiding mode service created");
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -267,38 +289,12 @@ HiwonderSystemHardware::on_activate(
     return CallbackReturn::ERROR;
   }
 
-  /*
-   * Initialize every position command with the current measured
-   * position. This prevents the hardware from jumping to an
-   * uninitialized command when the write loop starts.
-   */
-  for (const auto & joint : joints_) {
-    uint16_t raw_position = 0;
-
-    if (!bus_->readWord(
-        joint.servo_id,
-        hiwonder::reg::kCurrentPosition,
-        raw_position))
-    {
-      RCLCPP_ERROR(
-        get_logger(),
-        "Failed to read initial position from joint '%s'",
-        joint.name.c_str());
-
-      return CallbackReturn::ERROR;
-    }
-
-    const double position =
-      rawToPosition(joint, raw_position);
-
-    set_state(
-      joint.name + "/" + hardware_interface::HW_IF_POSITION,
-      position);
-
-    set_command(
-      joint.name + "/" + hardware_interface::HW_IF_POSITION,
-      position);
+  if (!synchronizeCommandsWithCurrentPosition()) {
+    return CallbackReturn::ERROR;
   }
+
+  guiding_mode_requested_.store(false);
+  guiding_mode_active_ = false;
 
   RCLCPP_INFO(
     get_logger(),
@@ -430,6 +426,41 @@ HiwonderSystemHardware::write(
     return hardware_interface::return_type::ERROR;
   }
 
+  const bool guiding_requested =
+    guiding_mode_requested_.load();
+
+  if (guiding_requested != guiding_mode_active_) {
+    if (guiding_requested) {
+      if (!setTorqueEnabled(false)) {
+        return hardware_interface::return_type::ERROR;
+      }
+
+      guiding_mode_active_ = true;
+
+      RCLCPP_INFO(
+        get_logger(),
+        "Guiding mode enabled");
+    } else {
+      if (!synchronizeCommandsWithCurrentPosition()) {
+        return hardware_interface::return_type::ERROR;
+      }
+
+      if (!setTorqueEnabled(true)) {
+        return hardware_interface::return_type::ERROR;
+      }
+
+      guiding_mode_active_ = false;
+
+      RCLCPP_INFO(
+        get_logger(),
+        "Guiding mode disabled");
+    }
+  }
+
+  if (guiding_mode_active_) {
+    return hardware_interface::return_type::OK;
+  }
+
   std::vector<uint8_t> ids;
   std::vector<uint8_t> data;
 
@@ -500,6 +531,78 @@ HiwonderSystemHardware::write(
   }
 
   return hardware_interface::return_type::OK;
+}
+
+void HiwonderSystemHardware::guidingModeCallback(
+  const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+  std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+{
+  guiding_mode_requested_.store(request->data);
+
+  response->success = true;
+
+  if (request->data) {
+    response->message = "Guiding mode requested";
+  } else {
+    response->message = "Guiding mode disable requested";
+  }
+}
+
+bool HiwonderSystemHardware::setTorqueEnabled(bool enabled)
+{
+  const uint8_t value = enabled ? 1U : 0U;
+
+  for (const auto & joint : joints_) {
+    if (!bus_->write(
+        joint.servo_id,
+        hiwonder::reg::kTorqueEnable,
+        std::span<const uint8_t>(&value, 1)))
+    {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Failed to %s torque for joint '%s' (servo %u)",
+        enabled ? "enable" : "disable",
+        joint.name.c_str(),
+        static_cast<unsigned int>(joint.servo_id));
+
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool HiwonderSystemHardware::synchronizeCommandsWithCurrentPosition()
+{
+  for (const auto & joint : joints_) {
+    uint16_t raw_position = 0;
+
+    if (!bus_->readWord(
+        joint.servo_id,
+        hiwonder::reg::kCurrentPosition,
+        raw_position))
+    {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Failed to read current position from joint '%s'",
+        joint.name.c_str());
+
+      return false;
+    }
+
+    const double position =
+      rawToPosition(joint, raw_position);
+
+    set_state(
+      joint.name + "/" + hardware_interface::HW_IF_POSITION,
+      position);
+
+    set_command(
+      joint.name + "/" + hardware_interface::HW_IF_POSITION,
+      position);
+  }
+
+  return true;
 }
 
 }  // namespace hiwonder_ros2_control

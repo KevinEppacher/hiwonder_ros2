@@ -20,6 +20,7 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(std_srvs REQUIRED)
 
 ############################################################
 # Build
@@ -41,6 +42,7 @@ ament_target_dependencies(${PROJECT_NAME}
     pluginlib
     rclcpp
     rclcpp_lifecycle
+    std_srvs
 )
 
 target_link_libraries(${PROJECT_NAME}

@@ -15,6 +15,7 @@
 #ifndef HIWONDER_ROS2_CONTROL__HIWONDER_SYSTEM_HARDWARE_HPP_
 #define HIWONDER_ROS2_CONTROL__HIWONDER_SYSTEM_HARDWARE_HPP_
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -24,8 +25,10 @@
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "rclcpp/duration.hpp"
+#include "rclcpp/service.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 
 #include "hiwonder_servo_driver/hiwonder_bus.hpp"
 #include "hiwonder_servo_driver/serial_port.hpp"
@@ -86,6 +89,14 @@ private:
     const JointConfig & joint,
     double position) const;
 
+  void guidingModeCallback(
+    const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+    std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+
+  bool setTorqueEnabled(bool enabled);
+
+  bool synchronizeCommandsWithCurrentPosition();
+
   std::string port_;
   std::string calibration_file_;
 
@@ -95,6 +106,12 @@ private:
 
   std::unique_ptr<hiwonder::SerialPort> serial_;
   std::unique_ptr<hiwonder::HiwonderBus> bus_;
+
+  std::atomic_bool guiding_mode_requested_{false};
+  bool guiding_mode_active_{false};
+
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr
+    guiding_mode_service_;
 };
 
 }  // namespace hiwonder_ros2_control
