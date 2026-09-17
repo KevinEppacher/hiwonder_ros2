@@ -16,6 +16,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -30,7 +31,7 @@ constexpr double kDegreesPerRevolution = 360.0;
 constexpr double kMovementDegrees = -10.0;
 
 constexpr uint16_t kMinPosition = 0;
-constexpr uint16_t kMaxPosition = 4095;
+constexpr uint16_t kMaxPosition = std::numeric_limits<uint16_t>::max();
 
 uint16_t addDegrees(
   uint16_t position,

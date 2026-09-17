@@ -15,6 +15,7 @@
   <depend>hiwonder_servo_driver</depend>
   <depend>lerobot_cpp</depend>
   <depend>pluginlib</depend>
+  <depend>yaml-cpp</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

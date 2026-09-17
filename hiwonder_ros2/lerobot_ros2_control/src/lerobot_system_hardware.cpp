@@ -80,6 +80,11 @@ LeRobotSystemHardware::on_init(
   try {
     calibration = YAML::LoadFile(calibration_file_);
   } catch (const std::exception & exception) {
+    if (robot_) {
+      robot_->disconnect();
+    }
+    robot_.reset();
+    robot_loader_.reset();
     RCLCPP_ERROR(
       get_logger(),
       "Failed to load calibration file '%s': %s",
@@ -104,9 +109,19 @@ LeRobotSystemHardware::on_init(
       return CallbackReturn::ERROR;
     }
 
+    if (joint.state_interfaces.size() != 1) {
+      RCLCPP_ERROR(get_logger(), "Joint '%s' must have exactly one state interface", joint.name.c_str());
+      return CallbackReturn::ERROR;
+    }
+
     const auto & command_interface = joint.command_interfaces.front();
     if (command_interface.name != hardware_interface::HW_IF_POSITION) {
       RCLCPP_ERROR(get_logger(), "Joint '%s' command interface must be 'position'", joint.name.c_str());
+      return CallbackReturn::ERROR;
+    }
+
+    if (joint.state_interfaces.front().name != hardware_interface::HW_IF_POSITION) {
+      RCLCPP_ERROR(get_logger(), "Joint '%s' state interface must be 'position'", joint.name.c_str());
       return CallbackReturn::ERROR;
     }
 
@@ -202,6 +217,10 @@ LeRobotSystemHardware::on_configure(const rclcpp_lifecycle::State &)
     if (!robot_->connect()) {
       throw std::runtime_error("failed to connect robot plugin");
     }
+
+    if (robot_->motorCount() != joints_.size()) {
+      throw std::runtime_error("robot motor count does not match configured joints");
+    }
   } catch (const std::exception & exception) {
     RCLCPP_ERROR(
       get_logger(),
@@ -245,9 +264,6 @@ LeRobotSystemHardware::on_activate(const rclcpp_lifecycle::State &)
 LeRobotSystemHardware::CallbackReturn
 LeRobotSystemHardware::on_deactivate(const rclcpp_lifecycle::State &)
 {
-  if (robot_) {
-    robot_->disconnect();
-  }
   return CallbackReturn::SUCCESS;
 }
 

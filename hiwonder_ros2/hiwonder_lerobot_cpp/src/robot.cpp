@@ -15,23 +15,14 @@
 #include "hiwonder_lerobot_cpp/robot.hpp"
 #include "hiwonder_servo_driver/registers.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
-#include <string>
-#include <utility>
 
 namespace hiwonder
 {
-
-LeRobot::LeRobot(
-  std::string port,
-  uint32_t baud_rate)
-: port_(std::move(port)),
-  baud_rate_(baud_rate)
-{
-}
 
 bool LeRobot::configure(
   const lerobot::RobotConfig & config)
@@ -130,7 +121,7 @@ const Motor & LeRobot::motor(
 
 std::size_t LeRobot::motorCount() const noexcept
 {
-  return motors_.size();
+  return motor_ids_.size();
 }
 
 bool LeRobot::setTorqueEnabled(
@@ -155,6 +146,10 @@ void LeRobot::addMotor(
   if (isConnected()) {
     throw std::logic_error(
       "Cannot add motors while robot is connected");
+  }
+
+  if (std::find(motor_ids_.begin(), motor_ids_.end(), id) != motor_ids_.end()) {
+    throw std::logic_error("Cannot add duplicate motor ID");
   }
 
   motor_ids_.push_back(id);

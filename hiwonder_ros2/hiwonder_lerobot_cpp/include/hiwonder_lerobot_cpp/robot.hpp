@@ -17,7 +17,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "hiwonder_servo_driver/motor.hpp"
@@ -32,10 +31,6 @@ class LeRobot : public lerobot::Robot
 {
 public:
   LeRobot() = default;
-
-  explicit LeRobot(
-    std::string port,
-    uint32_t baud_rate = 1000000);
 
   ~LeRobot() override = default;
 

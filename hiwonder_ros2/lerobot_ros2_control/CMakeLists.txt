@@ -110,6 +110,7 @@ ament_export_dependencies(
     pluginlib
     rclcpp
     rclcpp_lifecycle
+    std_srvs
     yaml-cpp
 )
 

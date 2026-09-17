@@ -14,7 +14,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ############################################################
 
 find_package(ament_cmake REQUIRED)
-find_package(hiwonder_servo_driver REQUIRED)
 
 ############################################################
 # Finalization
