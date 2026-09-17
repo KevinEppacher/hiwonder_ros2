@@ -42,7 +42,7 @@ ament_target_dependencies(${PROJECT_NAME}
 )
 
 pluginlib_export_plugin_description_file(
-    ${PROJECT_NAME}
+    lerobot_cpp
     hiwonder_lerobot_cpp_plugins.xml
 )
 

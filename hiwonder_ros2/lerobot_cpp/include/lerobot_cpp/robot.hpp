@@ -31,6 +31,7 @@ struct RobotConfig
 class Robot
 {
 public:
+  Robot() = default;
   virtual ~Robot() = default;
 
   virtual bool configure(

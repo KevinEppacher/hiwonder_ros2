@@ -9,7 +9,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+############################################################
+# Find Required Packages
+############################################################
+
 find_package(ament_cmake REQUIRED)
+
+############################################################
+# Build
+############################################################
 
 add_library(${PROJECT_NAME} INTERFACE)
 
@@ -18,12 +26,25 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 
+
+############################################################
+# Installation
+############################################################
+
 install(
   DIRECTORY include/
   DESTINATION include
 )
 
+############################################################
+# Export
+############################################################
+
 ament_export_include_directories(include)
 ament_export_dependencies(ament_cmake)
+
+############################################################
+# Finalization
+############################################################
 
 ament_package()

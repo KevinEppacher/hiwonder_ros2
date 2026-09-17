@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <string>
+#include "lerobot_cpp/robot.hpp"
 
 #include "hiwonder_lerobot_cpp/follower.hpp"
 
@@ -46,7 +47,15 @@ int main(int argc, char ** argv)
 
   const bool enable_torque = mode == "on";
 
-  hiwonder::Follower robot(port);
+  hiwonder::Follower robot;
+  lerobot::RobotConfig config;
+  config.port = port;
+  config.baud_rate = 1000000;
+
+  if(!robot.configure(config)){
+    std::cerr<<"Failed to configure robot\n";
+    return 1;
+  }
 
   if (!robot.connect()) {
     std::cerr << "Failed to connect to robot.\n";

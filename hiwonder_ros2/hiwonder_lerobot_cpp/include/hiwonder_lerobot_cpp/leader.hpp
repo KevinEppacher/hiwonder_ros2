@@ -24,18 +24,7 @@ namespace hiwonder
 class Leader : public LeRobot
 {
 public:
-  Leader()
-  {
-    addMotor(1);
-    addMotor(2);
-    addMotor(3);
-    addMotor(4);
-    addMotor(5);
-    addMotor(6);
-  }
-
-  explicit Leader(
-    const std::string & port);
+  Leader();
 
   ~Leader() override = default;
 };

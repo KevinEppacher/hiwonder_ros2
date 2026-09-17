@@ -24,18 +24,7 @@ namespace hiwonder
 class Follower : public LeRobot
 {
 public:
-  Follower()
-  {
-    addMotor(1);
-    addMotor(2);
-    addMotor(3);
-    addMotor(4);
-    addMotor(5);
-    addMotor(6);
-  }
-
-  explicit Follower(
-    const std::string & port);
+  Follower();
 
   ~Follower() override = default;
 };

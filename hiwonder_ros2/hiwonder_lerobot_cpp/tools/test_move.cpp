@@ -64,7 +64,16 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  hiwonder::Follower robot(argv[1]);
+  hiwonder::Follower robot;
+
+  lerobot::RobotConfig config;
+  config.port = argv[1];
+  config.baud_rate = 1000000;
+
+  if (!robot.configure(config)) {
+    std::cerr << "Failed to configure robot\n";
+    return 1;
+  }
 
   if (!robot.connect()) {
     std::cerr << "Failed to connect to robot.\n";

@@ -187,7 +187,7 @@ LeRobotSystemHardware::on_configure(const rclcpp_lifecycle::State &)
 {
   try {
     robot_loader_ = std::make_unique<pluginlib::ClassLoader<lerobot::Robot>>(
-      "hiwonder_lerobot_cpp",
+      "lerobot_cpp",
       "lerobot::Robot");
     robot_ = robot_loader_->createUniqueInstance(robot_plugin_);
 

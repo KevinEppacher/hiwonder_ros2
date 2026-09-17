@@ -261,7 +261,16 @@ int main(int argc, char ** argv)
   const std::string port = argv[1];
   const std::string calibration_path = argv[2];
 
-  hiwonder::Follower robot(port);
+  hiwonder::Follower robot;
+
+  lerobot::RobotConfig config;
+  config.port = port;
+  config.baud_rate = 1000000;
+
+  if (!robot.configure(config)) {
+    std::cerr << "Failed to configure robot\n";
+    return 1;
+  }  
 
   std::cout
     << "LeRobot Calibration\n"

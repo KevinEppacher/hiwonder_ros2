@@ -19,16 +19,11 @@
 namespace hiwonder
 {
 
-Follower::Follower(
-  const std::string & port)
-: LeRobot(port)
+Follower::Follower()
 {
-  addMotor(1);
-  addMotor(2);
-  addMotor(3);
-  addMotor(4);
-  addMotor(5);
-  addMotor(6);
+  for (uint8_t id = 1; id <= 6; ++id) {
+    addMotor(id);
+  }
 }
 
 }  // namespace hiwonder
