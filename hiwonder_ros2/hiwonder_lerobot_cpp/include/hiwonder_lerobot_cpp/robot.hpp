@@ -23,24 +23,30 @@
 #include "hiwonder_servo_driver/motor.hpp"
 #include "hiwonder_servo_driver/hiwonder_bus.hpp"
 #include "hiwonder_servo_driver/serial_port.hpp"
+#include "lerobot_cpp/robot.hpp"
 
 namespace hiwonder
 {
 
-class LeRobot
+class LeRobot : public lerobot::Robot
 {
 public:
+  LeRobot() = default;
+
   explicit LeRobot(
     std::string port,
     uint32_t baud_rate = 1000000);
 
-  virtual ~LeRobot() = default;
+  ~LeRobot() override = default;
 
-  bool connect();
+  bool configure(
+    const lerobot::RobotConfig & config) override;
 
-  void disconnect();
+  bool connect() override;
 
-  [[nodiscard]] bool isConnected() const noexcept;
+  void disconnect() override;
+
+  [[nodiscard]] bool isConnected() const noexcept override;
 
   Motor & motor(
     std::size_t index);
@@ -48,18 +54,21 @@ public:
   const Motor & motor(
     std::size_t index) const;
 
-  [[nodiscard]] std::size_t motorCount() const noexcept;
+  [[nodiscard]] std::size_t motorCount() const noexcept override;
 
   bool setTorqueEnabled(
-    bool enabled);
+    bool enabled) override;
 
   bool readPositions(
-    std::vector<uint16_t> & positions);
+    std::vector<uint16_t> & positions) override;
+
+  bool writePositions(
+    const std::vector<uint16_t> & positions) override;
 
   bool writePositions(
     const std::vector<uint16_t> & positions,
-    uint16_t move_time_ms = 1000,
-    uint16_t move_speed = 0);
+    uint16_t move_time_ms,
+    uint16_t move_speed);
 
 protected:
   void addMotor(
@@ -67,7 +76,7 @@ protected:
 
 private:
   std::string port_;
-  uint32_t baud_rate_;
+  uint32_t baud_rate_{1000000};
 
   std::vector<uint8_t> motor_ids_;
 

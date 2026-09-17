@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<library path="lerobot_ros2_control">
+  <class
+    name="lerobot_ros2_control/LeRobotSystemHardware"
+    type="lerobot_ros2_control::LeRobotSystemHardware"
+    base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ros2_control hardware interface for generic LeRobot implementations loaded through pluginlib.
+    </description>
+  </class>
+</library>

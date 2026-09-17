@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>hiwonder_ros2_control</name>
+  <name>lerobot_ros2_control</name>
   <version>0.1.0</version>
-  <description>ros2_control hardware interface for HiWonder serial bus servos.</description>
+  <description>Generic ros2_control hardware interface for LeRobot implementations.</description>
   <maintainer email="kevin-eppacher@hotmail.de">Kevin Eppacher</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>hardware_interface</depend>
-  <depend>hiwonder_servo_driver</depend>
+  <depend>lerobot_cpp</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>

@@ -15,6 +15,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(ament_cmake REQUIRED)
 find_package(hiwonder_servo_driver REQUIRED)
+find_package(lerobot_cpp REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 ############################################################
@@ -35,6 +37,13 @@ target_include_directories(${PROJECT_NAME}
 
 ament_target_dependencies(${PROJECT_NAME}
     hiwonder_servo_driver
+    lerobot_cpp
+    pluginlib
+)
+
+pluginlib_export_plugin_description_file(
+    ${PROJECT_NAME}
+    hiwonder_lerobot_cpp_plugins.xml
 )
 
 ############################################################
@@ -118,6 +127,8 @@ ament_export_targets(
 
 ament_export_dependencies(
     hiwonder_servo_driver
+    lerobot_cpp
+    pluginlib
 )
 
 ament_export_include_directories(include)

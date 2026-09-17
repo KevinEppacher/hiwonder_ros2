@@ -14,6 +14,8 @@
 
 #include "hiwonder_lerobot_cpp/follower.hpp"
 
+#include "pluginlib/class_list_macros.hpp"
+
 namespace hiwonder
 {
 
@@ -30,3 +32,5 @@ Follower::Follower(
 }
 
 }  // namespace hiwonder
+
+PLUGINLIB_EXPORT_CLASS(hiwonder::Follower, lerobot::Robot)

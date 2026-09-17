@@ -33,6 +33,18 @@ LeRobot::LeRobot(
 {
 }
 
+bool LeRobot::configure(
+  const lerobot::RobotConfig & config)
+{
+  if (isConnected()) {
+    return false;
+  }
+
+  port_ = config.port;
+  baud_rate_ = config.baud_rate;
+  return true;
+}
+
 bool LeRobot::connect()
 {
   if (isConnected()) {
@@ -146,6 +158,12 @@ void LeRobot::addMotor(
   }
 
   motor_ids_.push_back(id);
+}
+
+bool LeRobot::writePositions(
+  const std::vector<uint16_t> & positions)
+{
+  return writePositions(positions, 0, 0);
 }
 
 bool LeRobot::writePositions(

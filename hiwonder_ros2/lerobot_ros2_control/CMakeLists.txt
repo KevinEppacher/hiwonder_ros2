@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(hiwonder_ros2_control)
+project(lerobot_ros2_control)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
@@ -15,7 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(ament_cmake REQUIRED)
 find_package(hardware_interface REQUIRED)
-find_package(hiwonder_servo_driver REQUIRED)
+find_package(lerobot_cpp REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -27,7 +27,7 @@ find_package(std_srvs REQUIRED)
 ############################################################
 
 add_library(${PROJECT_NAME} SHARED
-    src/hiwonder_system_hardware.cpp
+    src/lerobot_system_hardware.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -38,7 +38,7 @@ target_include_directories(${PROJECT_NAME}
 
 ament_target_dependencies(${PROJECT_NAME}
     hardware_interface
-    hiwonder_servo_driver
+    lerobot_cpp
     pluginlib
     rclcpp
     rclcpp_lifecycle
@@ -51,7 +51,7 @@ target_link_libraries(${PROJECT_NAME}
 
 pluginlib_export_plugin_description_file(
     hardware_interface
-    hiwonder_ros2_control.xml
+    lerobot_ros2_control.xml
 )
 
 ############################################################
@@ -76,12 +76,21 @@ install(
 ############################################################
 
 if(BUILD_TESTING)
+    find_package(ament_cmake_gtest REQUIRED)
     find_package(ament_lint_auto REQUIRED)
 
     set(ament_cmake_copyright_FOUND TRUE)
     set(ament_cmake_cpplint_FOUND TRUE)
 
     ament_lint_auto_find_test_dependencies()
+
+    ament_add_gtest(test_calibration
+        test/test_calibration.cpp
+    )
+
+    target_link_libraries(test_calibration
+        ${PROJECT_NAME}
+    )
 endif()
 
 ############################################################
@@ -97,7 +106,7 @@ ament_export_include_directories(include)
 
 ament_export_dependencies(
     hardware_interface
-    hiwonder_servo_driver
+    lerobot_cpp
     pluginlib
     rclcpp
     rclcpp_lifecycle
