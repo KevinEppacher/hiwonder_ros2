@@ -53,7 +53,7 @@ int main(int argc, char ** argv)
   config.baud_rate = 1000000;
 
   if(!robot.configure(config)){
-    std::cerr<<"Failed to configure robot\n";
+    std::cerr << "Failed to configure robot\n";
     return 1;
   }
 

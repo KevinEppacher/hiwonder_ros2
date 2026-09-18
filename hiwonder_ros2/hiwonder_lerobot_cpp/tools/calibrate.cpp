@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <yaml-cpp/yaml.h>
+
 #include <array>
 #include <cstdint>
 #include <fstream>
@@ -19,8 +21,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include <yaml-cpp/yaml.h>
 
 #include "hiwonder_lerobot_cpp/follower.hpp"
 
@@ -270,7 +270,7 @@ int main(int argc, char ** argv)
   if (!robot.configure(config)) {
     std::cerr << "Failed to configure robot\n";
     return 1;
-  }  
+  }
 
   std::cout
     << "LeRobot Calibration\n"

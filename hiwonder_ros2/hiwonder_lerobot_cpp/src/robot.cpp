@@ -13,13 +13,14 @@
 // limitations under the License.
 
 #include "hiwonder_lerobot_cpp/robot.hpp"
-#include "hiwonder_servo_driver/registers.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
+
+#include "hiwonder_servo_driver/registers.hpp"
 
 namespace hiwonder
 {

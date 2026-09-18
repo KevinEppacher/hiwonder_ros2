@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "hiwonder_servo_driver/motor.hpp"
 #include "hiwonder_servo_driver/hiwonder_bus.hpp"

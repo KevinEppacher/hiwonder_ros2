@@ -67,3 +67,11 @@ run_cpplint() {
 # Linter checks for hiwonder_servo_driver
 run_cpplint hiwonder_servo_driver
 run_xmllint hiwonder_servo_driver
+
+# Linter checks for lerobot_cpp
+run_cpplint lerobot_cpp
+run_xmllint lerobot_cpp
+
+# Linter checks for hiwonder_lerobot_cpp
+run_cpplint hiwonder_lerobot_cpp
+run_xmllint hiwonder_lerobot_cpp
