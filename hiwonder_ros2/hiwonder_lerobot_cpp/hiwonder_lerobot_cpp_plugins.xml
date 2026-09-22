@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<library path="hiwonder_lerobot_cpp">
+  <class
+    name="hiwonder_lerobot_cpp/Follower"
+    type="hiwonder::Follower"
+    base_class_type="lerobot::Robot">
+    <description>
+      HiWonder LeRobot follower implementation using the generic LeRobot robot interface.
+    </description>
+  </class>
+  <class
+    name="hiwonder_lerobot_cpp/Leader"
+    type="hiwonder::Leader"
+    base_class_type="lerobot::Robot">
+    <description>
+      HiWonder LeRobot leader implementation using the generic LeRobot robot interface.
+    </description>
+  </class>
+</library>
