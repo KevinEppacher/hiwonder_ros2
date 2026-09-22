@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="so101_follower">
+  <xacro:arg name="port" default="/dev/ttyACM0"/>
+  <xacro:arg name="calibration_file" default="$(find so101_follower_description)/config/so101_follower_calibration.yaml"/>
+  <xacro:include filename="$(find so101_follower_description)/urdf/so101_follower_macro.xacro"/>
+  <xacro:include filename="$(find so101_follower_description)/urdf/so101_follower_ros2_control.xacro"/>
+  <xacro:so101_follower/>
+  <xacro:so101_follower_ros2_control port="$(arg port)" calibration_file="$(arg calibration_file)"/>
+</robot>
