@@ -38,7 +38,8 @@ RUN apt update && apt install -y \
 RUN apt update && apt install -y \
     ros-${ROS_DISTRO}-ros2-control \
     ros-${ROS_DISTRO}-ros2-controllers \
-    ros-${ROS_DISTRO}-joint-trajectory-controller
+    ros-${ROS_DISTRO}-joint-trajectory-controller \
+    libyaml-cpp-dev
 
 RUN apt update && apt upgrade -y
 

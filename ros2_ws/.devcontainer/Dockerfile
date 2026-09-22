@@ -39,6 +39,27 @@ RUN pip install -r /app/requirements.txt
 RUN sudo apt update && sudo apt install -y \
     ros-${ROS_DISTRO}-ament-lint
 
+RUN sudo apt update && sudo apt install -y \
+    ros-${ROS_DISTRO}-ros2-control
+
+# Install ROS packages for working with robot models and visualization
+RUN sudo apt update && sudo apt install -y \
+    ros-${ROS_DISTRO}-xacro \
+    ros-${ROS_DISTRO}-joint-state-publisher \
+    ros-${ROS_DISTRO}-joint-state-publisher-gui \
+    ros-${ROS_DISTRO}-robot-state-publisher \
+    ros-${ROS_DISTRO}-tf2-tools \
+    ros-${ROS_DISTRO}-rqt-tf-tree \
+    ros-${ROS_DISTRO}-tf-transformations \
+    ros-${ROS_DISTRO}-rqt \
+    ros-${ROS_DISTRO}-rqt-common-plugins \
+    ros-${ROS_DISTRO}-urdf \
+    ros-${ROS_DISTRO}-joint-state-broadcaster \
+    ros-${ROS_DISTRO}-forward-command-controller
+
+RUN sudo apt update && sudo apt install -y \
+    libyaml-cpp-dev
+
 ########################################################
 # End Custom installations
 ########################################################
