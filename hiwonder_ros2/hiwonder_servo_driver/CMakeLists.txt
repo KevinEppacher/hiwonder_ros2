@@ -23,6 +23,7 @@ add_library(${PROJECT_NAME} SHARED
     src/serial_port.cpp
     src/hiwonder_bus.cpp
     src/servo.cpp
+    src/motor.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -57,41 +58,26 @@ target_link_libraries(hiwonder-setup-motors
         ${PROJECT_NAME}
 )
 
-add_executable(hiwonder-test-move
-    tools/test_move.cpp
-)
-
-target_link_libraries(hiwonder-test-move
-    PRIVATE
-        ${PROJECT_NAME}
-)
-
-add_executable(hiwonder-torque-mode
-    tools/torque_mode.cpp
-)
-
-target_link_libraries(hiwonder-torque-mode
-    PRIVATE
-        ${PROJECT_NAME}
-)
-
 ############################################################
 # Installation
 ############################################################
 
 install(
-    TARGETS
-        ${PROJECT_NAME}
-        hiwonder-find-port
-        hiwonder-scan
-        hiwonder-setup-motors
-        hiwonder-test-move
-        hiwonder-torque-mode
+    TARGETS ${PROJECT_NAME}
     EXPORT export_${PROJECT_NAME}
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
 )
+
+install(
+    TARGETS
+        hiwonder-find-port
+        hiwonder-scan
+        hiwonder-setup-motors
+    RUNTIME DESTINATION bin
+)
+
 install(
     DIRECTORY include/
     DESTINATION include
