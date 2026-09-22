@@ -3,67 +3,85 @@
 set -euo pipefail
 
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
-RED='\033[0;31m'
 
 workspace_root="/app"
 
-echo -e "${BOLD}${CYAN}Building ament_ruff, ament_cmake_ruff packages...${RESET}"
+echo -e "${BOLD}${CYAN}Building linter packages...${RESET}"
 cd "$workspace_root"
-colcon build --symlink-install --packages-select \
-    ament_ruff \
-    ament_cmake_ruff
 
-echo -e "${BOLD}${CYAN}Sourcing ROS 2 and workspace setup files...${RESET}"
+build_log="$(mktemp)"
+
+echo
+echo -e "${BOLD}${CYAN}Sourcing ROS 2 and workspace...${RESET}"
+
 set +u
-# first source specific ROS 2 distribution setup file (especially if multiple distributions are installed),
-# then source workspace setup file
-source /opt/ros/jazzy/setup.bash && source install/setup.bash
+source /opt/ros/jazzy/setup.bash
 set -u
 
-run_mypy() {
-    echo -e "${CYAN}Performing mypy checks for $1...${RESET}"
-    if [ ! -d "/app/src/$1" ]; then
-        echo -e "${YELLOW}WARNING: Path /app/src/$1 does not exist.${RESET}"
-        return
+echo -e "${GREEN}✓ Workspace sourced${RESET}"
+echo
+
+check_path() {
+    if [ ! -d "$workspace_root/src/$1" ]; then
+        echo -e "${YELLOW}⚠ Package $1 does not exist. Skipping.${RESET}"
+        return 1
     fi
-    ament_mypy --config /app/ci/linter_configs/mypy.toml "/app/src/$1"
-    echo -e "${GREEN}Checked mypy for $1 successfully.${RESET}"
 }
 
-run_ruff() {
-    echo -e "${CYAN}Performing ruff checks for $1...${RESET}"
-    if [ ! -d "/app/src/$1" ]; then
-        echo -e "${YELLOW}WARNING: Path /app/src/$1 does not exist.${RESET}"
-        return
+run_linter() {
+    local linter="$1"
+    local package="$2"
+    shift 2
+
+    local log_file
+    log_file="$(mktemp)"
+
+    if "$@" >"$log_file" 2>&1; then
+        echo -e "${GREEN}✓ ${package}: ${linter}${RESET}"
+        rm -f "$log_file"
+    else
+        echo -e "${BOLD}${RED}✗ ${package}: ${linter} failed${RESET}"
+        echo
+        cat "$log_file"
+        rm -f "$log_file"
+        return 1
     fi
-    ament_ruff --config /app/ci/linter_configs/ruff.toml "/app/src/$1"
-    echo -e "${GREEN}Checked ruff for $1 successfully.${RESET}"
 }
 
 run_xmllint() {
-    echo -e "${CYAN}Performing xmllint checks for $1...${RESET}"
-    if [ ! -d "/app/src/$1" ]; then
-        echo -e "${YELLOW}WARNING: Path /app/src/$1 does not exist.${RESET}"
-        return
-    fi
-    ament_xmllint "/app/src/$1"
-    echo -e "${GREEN}Checked xmllint for $1 successfully.${RESET}"
+    check_path "$1" || return
+
+    run_linter xmllint "$1" \
+        ament_xmllint "$workspace_root/src/$1"
 }
 
 run_cpplint() {
-    echo -e "${CYAN}Performing cpplint checks for $1...${RESET}"
-    if [ ! -d "/app/src/$1" ]; then
-        echo -e "${YELLOW}WARNING: Path /app/src/$1 does not exist.${RESET}"
-        return
-    fi
-    ament_cpplint "/app/src/$1"
-    echo -e "${GREEN}Checked cpplint for $1 successfully.${RESET}"
+    check_path "$1" || return
+
+    run_linter cpplint "$1" \
+        ament_cpplint "$workspace_root/src/$1"
 }
 
 # Linter checks for hiwonder_servo_driver
 run_cpplint hiwonder_servo_driver
 run_xmllint hiwonder_servo_driver
+
+# Linter checks for lerobot_cpp
+run_cpplint lerobot_cpp
+run_xmllint lerobot_cpp
+
+# Linter checks for hiwonder_lerobot_cpp
+run_cpplint hiwonder_lerobot_cpp
+run_xmllint hiwonder_lerobot_cpp
+
+# Linter checks for lerobot_ros2_control
+run_cpplint lerobot_ros2_control
+run_xmllint lerobot_ros2_control
+
+echo
+echo -e "${BOLD}${GREEN}✓ All linter checks passed${RESET}"
