@@ -1,6 +1,6 @@
 ARG ROS_DISTRO=jazzy
 
-FROM docker.io/osrf/ros:${ROS_DISTRO}-desktop-full
+FROM ros:${ROS_DISTRO}
 
 ARG USERNAME=ubuntu
 ARG USER_UID=1000
@@ -22,6 +22,9 @@ RUN sudo apt update && sudo apt upgrade -y
 ########################################################
 # Custom installations
 ########################################################
+
+RUN sudo apt update && sudo apt install -y \
+    ros-${ROS_DISTRO}-desktop
 
 # Install python3-pip for installing Python packages with pip
 RUN sudo apt update && \
