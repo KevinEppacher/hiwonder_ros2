@@ -2,7 +2,7 @@ services:
   hiwonder_container:
     image: ros2/hiwonder:jazzy
     build:
-      context: ../ros2_ws/.devcontainer
+      context: ../ros2_ws/.config/dev
       dockerfile: Dockerfile
     container_name: ros2_hiwonder_container
     privileged: true
@@ -13,7 +13,6 @@ services:
     volumes:
       - ../ros2_ws:/app
       - ../hiwonder_ros2:/app/src
-      - ../ci:/app/ci
       - /tmp/.X11-unix:/tmp/.X11-unix
     devices:
       - /dev/ttyACM0:/dev/ttyACM0   # Forward usb ports
