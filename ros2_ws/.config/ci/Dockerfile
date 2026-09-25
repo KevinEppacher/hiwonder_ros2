@@ -11,7 +11,7 @@ RUN apt update && \
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
 # Install python packages from requirements.txt
-COPY ci/requirements.txt /app/requirements.txt
+COPY ros2_ws/.config/ci/requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
 
 # Install ros ament lint packages
