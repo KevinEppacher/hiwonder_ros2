@@ -74,4 +74,9 @@ COPY --from=builder /app/install /app/install
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc && \
     echo "source /app/install/setup.bash" >> /root/.bashrc
 
+COPY ros2_ws/.config/cd/entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"]
