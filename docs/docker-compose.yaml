@@ -1,0 +1,67 @@
+services:
+  so101_bringup_service:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    volumes:
+      - ./config:/config:ro
+    command:
+      [
+        "ros2",
+        "launch",
+        "lerobot_bringup",
+        "so101_follower_bringup.launch.py",
+        "port:=/dev/ttyACM0",
+        "calibration_path:=/config/so101_follower_calibration.yaml"
+      ]
+
+  hiwonder-scan:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    command: ["hiwonder-scan", "/dev/ttyACM0"]
+
+  hiwonder-find-port:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    privileged: true
+    volumes:
+      - /dev:/dev
+    command: ["hiwonder-find-port"]
+
+  hiwonder-setup-motors:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    command: ["hiwonder-setup-motors", "/dev/ttyACM0"]
+
+  lerobot-calibrate:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    volumes:
+      - ./config:/config
+    command:
+      [
+        "lerobot-calibrate",
+        "/dev/ttyACM0",
+        "/config/so101_follower_calibration.yaml"
+      ]
+
+  lerobot-test-move:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    command: ["lerobot-test-move", "/dev/ttyACM0"]
+
+  lerobot-torque-mode:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    command: ["lerobot-torque-mode", "/dev/ttyACM0"]
