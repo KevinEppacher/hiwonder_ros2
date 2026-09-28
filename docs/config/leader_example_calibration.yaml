@@ -1,24 +1,24 @@
 shoulder_pan:
   servo_id: 1
-  lower_position: 388
-  upper_position: 3092
+  lower_position: 631
+  upper_position: 3366
 shoulder_lift:
   servo_id: 2
-  lower_position: 871
-  upper_position: 3189
+  lower_position: 1853
+  upper_position: 4190
 elbow_flex:
   servo_id: 3
-  lower_position: 1124
-  upper_position: 3323
+  lower_position: 565
+  upper_position: 2769
 wrist_flex:
   servo_id: 4
-  lower_position: 292
-  upper_position: 2551
+  lower_position: 485
+  upper_position: 2800
 wrist_roll:
   servo_id: 5
-  lower_position: 1772
-  upper_position: 5585
+  lower_position: 0
+  upper_position: 3500
 gripper:
   servo_id: 6
-  lower_position: 1595
-  upper_position: 2810
+  lower_position: 1849
+  upper_position: 3329
