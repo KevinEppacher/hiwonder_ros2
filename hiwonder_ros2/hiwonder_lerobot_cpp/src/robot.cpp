@@ -157,13 +157,13 @@ void LeRobot::addMotor(
 }
 
 bool LeRobot::writePositions(
-  const std::vector<uint16_t> & positions)
+  const std::vector<int16_t> & positions)
 {
   return writePositions(positions, 0, 0);
 }
 
 bool LeRobot::writePositions(
-  const std::vector<uint16_t> & positions,
+  const std::vector<int16_t> & positions,
   uint16_t move_time_ms,
   uint16_t move_speed)
 {
@@ -189,10 +189,14 @@ bool LeRobot::writePositions(
     uint8_t * motor_data =
       data.data() + i * kBytesPerMotor;
 
+    const uint16_t raw_position =
+      Motor::encodePosition(positions[i]);
+
     motor_data[0] =
-      static_cast<uint8_t>(positions[i] & 0xFF);
+      static_cast<uint8_t>(raw_position & 0xFFU);
+
     motor_data[1] =
-      static_cast<uint8_t>((positions[i] >> 8) & 0xFF);
+      static_cast<uint8_t>((raw_position >> 8) & 0xFFU);
 
     motor_data[2] =
       static_cast<uint8_t>(move_time_ms & 0xFF);
@@ -213,7 +217,7 @@ bool LeRobot::writePositions(
 }
 
 bool LeRobot::readPositions(
-  std::vector<uint16_t> & positions)
+  std::vector<int16_t> & positions)
 {
   if (!isConnected()) {
     return false;

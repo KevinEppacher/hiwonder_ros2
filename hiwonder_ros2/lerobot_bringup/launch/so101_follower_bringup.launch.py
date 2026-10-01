@@ -32,7 +32,7 @@ def generate_launch_description():
     default_calibration_file = os.path.join(
         so101_description_share,
         "config",
-        "example_calibration.yaml",
+        "follower_example_calibration.yaml",
     )
 
     controllers_file = os.path.join(
