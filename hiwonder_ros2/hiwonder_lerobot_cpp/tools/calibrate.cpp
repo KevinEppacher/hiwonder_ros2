@@ -35,8 +35,8 @@ struct Joint
 
 struct JointCalibration
 {
-  uint16_t lower_position;
-  uint16_t upper_position;
+  int16_t lower_position;
+  int16_t upper_position;
 };
 
 constexpr std::array<Joint, 6> kJoints{{
@@ -57,9 +57,9 @@ void waitForEnter()
 bool readPosition(
   hiwonder::Follower & robot,
   std::size_t index,
-  uint16_t & position)
+  int16_t & position)
 {
-  std::vector<uint16_t> positions;
+  std::vector<int16_t> positions;
 
   if (!robot.readPositions(positions)) {
     std::cerr

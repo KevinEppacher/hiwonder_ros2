@@ -60,7 +60,7 @@ public:
    * @return True if the position is read successfully, otherwise false.
    */
   bool readPosition(
-    uint16_t & position);
+    int16_t & position);
 
   /**
    * @brief Writes a raw target position to the servo.
@@ -69,7 +69,7 @@ public:
    * @return True if the position is written successfully, otherwise false.
    */
   bool writePosition(
-    uint16_t position);
+    int16_t position);
 
   /**
    * @brief Enables or disables servo torque.

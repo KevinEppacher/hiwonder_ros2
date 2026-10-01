@@ -21,6 +21,7 @@
 #include "hiwonder_servo_driver/hiwonder_bus.hpp"
 #include "hiwonder_servo_driver/registers.hpp"
 #include "hiwonder_servo_driver/serial_port.hpp"
+#include "hiwonder_servo_driver/motor.hpp"
 
 namespace
 {
@@ -33,6 +34,8 @@ void printServoInfo(
   hiwonder::HiwonderBus & bus,
   uint8_t id)
 {
+  hiwonder::Motor motor(id, bus);
+
   uint8_t firmware_main = 0;
   uint8_t firmware_sub = 0;
   uint8_t configured_id = 0;
@@ -40,42 +43,40 @@ void printServoInfo(
   uint8_t voltage_raw = 0;
 
   uint16_t model = 0;
-  uint16_t position = 0;
+  int16_t position = 0;
 
   const bool firmware_main_ok = bus.read(
-        id,
-        hiwonder::reg::kFirmwareMain,
-        std::span<uint8_t>(&firmware_main, 1));
+    id,
+    hiwonder::reg::kFirmwareMain,
+    std::span<uint8_t>(&firmware_main, 1));
 
   const bool firmware_sub_ok = bus.read(
-        id,
-        hiwonder::reg::kFirmwareSub,
-        std::span<uint8_t>(&firmware_sub, 1));
+    id,
+    hiwonder::reg::kFirmwareSub,
+    std::span<uint8_t>(&firmware_sub, 1));
 
   const bool model_ok = bus.readWord(
-        id,
-        hiwonder::reg::kModelLow,
-        model);
+    id,
+    hiwonder::reg::kModelLow,
+    model);
 
   const bool id_ok = bus.read(
-        id,
-        hiwonder::reg::kId,
-        std::span<uint8_t>(&configured_id, 1));
+    id,
+    hiwonder::reg::kId,
+    std::span<uint8_t>(&configured_id, 1));
 
-  const bool position_ok = bus.readWord(
-        id,
-        hiwonder::reg::kCurrentPosition,
-        position);
+  const bool position_ok =
+    motor.readPosition(position);
 
   const bool voltage_ok = bus.read(
-        id,
-        hiwonder::reg::kCurrentVoltage,
-        std::span<uint8_t>(&voltage_raw, 1));
+    id,
+    hiwonder::reg::kCurrentVoltage,
+    std::span<uint8_t>(&voltage_raw, 1));
 
   const bool temperature_ok = bus.read(
-        id,
-        hiwonder::reg::kCurrentTemperature,
-        std::span<uint8_t>(&temperature, 1));
+    id,
+    hiwonder::reg::kCurrentTemperature,
+    std::span<uint8_t>(&temperature, 1));
 
   std::cout
         << "Servo found at ID "

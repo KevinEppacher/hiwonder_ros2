@@ -81,15 +81,15 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  std::vector<uint16_t> current_positions;
+  std::vector<int16_t> current_positions;
 
   if (!robot.readPositions(current_positions)) {
     std::cerr << "Failed to read motor positions.\n";
     return 1;
   }
 
-  std::vector<uint16_t> target_positions =
-    current_positions;
+  std::vector<int16_t> target_positions(
+    current_positions.size());
 
   for (std::size_t i = 0; i < target_positions.size(); ++i) {
     target_positions[i] = addDegrees(

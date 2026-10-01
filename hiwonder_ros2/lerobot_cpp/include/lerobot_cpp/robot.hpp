@@ -94,7 +94,7 @@ public:
    * @return True if all positions are read successfully, otherwise false.
    */
   virtual bool readPositions(
-    std::vector<uint16_t> & positions) = 0;
+    std::vector<int16_t> & positions) = 0;
 
   /**
    * @brief Writes raw target positions to all motors.
@@ -103,7 +103,7 @@ public:
    * @return True if the positions are written successfully, otherwise false.
    */
   virtual bool writePositions(
-    const std::vector<uint16_t> & positions) = 0;
+    const std::vector<int16_t> & positions) = 0;
 };
 
 }  // namespace lerobot
