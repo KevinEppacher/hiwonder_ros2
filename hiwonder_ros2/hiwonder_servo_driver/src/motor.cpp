@@ -40,17 +40,31 @@ bool Motor::ping()
   return bus_.ping(id_);
 }
 
-bool Motor::readPosition(
-  uint16_t & position)
+bool Motor::readPosition(int16_t & position)
 {
-  return bus_.readWord(
-    id_,
-    reg::kCurrentPosition,
-    position);
+  uint16_t raw_position{};
+
+  if (!bus_.readWord(
+      id_,
+      reg::kCurrentPosition,
+      raw_position))
+  {
+    return false;
+  }
+
+  const auto magnitude =
+    static_cast<int16_t>(raw_position & 0x7FFFU);
+
+  position =
+    (raw_position & 0x8000U) != 0U ?
+    -magnitude :
+    magnitude;
+
+  return true;
 }
 
 bool Motor::writePosition(
-  uint16_t position)
+  int16_t position)
 {
   return bus_.writeWord(
     id_,

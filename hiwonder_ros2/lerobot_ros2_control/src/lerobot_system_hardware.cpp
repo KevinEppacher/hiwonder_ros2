@@ -31,7 +31,7 @@
 namespace lerobot_ros2_control
 {
 
-double rawToPosition(const JointCalibration & joint, uint16_t raw_position)
+double rawToPosition(const JointCalibration & joint, int16_t raw_position)
 {
   const double raw_lower = static_cast<double>(joint.lower_position);
   const double raw_upper = static_cast<double>(joint.upper_position);
@@ -47,7 +47,7 @@ double rawToPosition(const JointCalibration & joint, uint16_t raw_position)
   return joint.lower_limit + normalized * (joint.upper_limit - joint.lower_limit);
 }
 
-uint16_t positionToRaw(const JointCalibration & joint, double position)
+int16_t positionToRaw(const JointCalibration & joint, double position)
 {
   const double clamped_position =
     std::clamp(position, joint.lower_limit, joint.upper_limit);
@@ -66,7 +66,7 @@ uint16_t positionToRaw(const JointCalibration & joint, double position)
   const double raw_max =
     static_cast<double>(std::max(joint.lower_position, joint.upper_position));
 
-  return static_cast<uint16_t>(std::lround(std::clamp(raw, raw_min, raw_max)));
+  return static_cast<int16_t>(std::lround(std::clamp(raw, raw_min, raw_max)));
 }
 
 LeRobotSystemHardware::CallbackReturn
@@ -157,19 +157,19 @@ for (const auto & joint : info_.joints) {
 
     try {
         const auto lower_position =
-            calibration_joint["lower_position"].as<unsigned int>();
+            calibration_joint["lower_position"].as<int>();
         const auto upper_position =
-            calibration_joint["upper_position"].as<unsigned int>();
+            calibration_joint["upper_position"].as<int>();
 
-        if (lower_position > std::numeric_limits<uint16_t>::max() ||
-            upper_position > std::numeric_limits<uint16_t>::max())
+        if (lower_position > std::numeric_limits<int16_t>::max() ||
+            upper_position > std::numeric_limits<int16_t>::max())
         {
             throw std::out_of_range(
-                "calibration position exceeds uint16_t range");
+                "calibration position exceeds int16_t range");
         }
 
-        config.lower_position = static_cast<uint16_t>(lower_position);
-        config.upper_position = static_cast<uint16_t>(upper_position);
+        config.lower_position = static_cast<int16_t>(lower_position);
+        config.upper_position = static_cast<int16_t>(upper_position);
         config.lower_limit = std::stod(command_interface.min);
         config.upper_limit = std::stod(command_interface.max);
     } catch (const std::exception & exception) {
@@ -324,7 +324,7 @@ LeRobotSystemHardware::read(const rclcpp::Time &, const rclcpp::Duration &)
     return hardware_interface::return_type::ERROR;
   }
 
-  std::vector<uint16_t> raw_positions;
+  std::vector<int16_t> raw_positions;
   if (!robot_->readPositions(raw_positions)) {
     RCLCPP_ERROR(get_logger(), "Failed to read positions from robot");
     return hardware_interface::return_type::ERROR;
@@ -379,7 +379,7 @@ LeRobotSystemHardware::write(const rclcpp::Time &, const rclcpp::Duration &)
     return hardware_interface::return_type::OK;
   }
 
-  std::vector<uint16_t> raw_positions;
+  std::vector<int16_t> raw_positions;
   raw_positions.reserve(joints_.size());
 
   for (const auto & joint : joints_) {
@@ -425,7 +425,7 @@ bool LeRobotSystemHardware::synchronizeCommandsWithCurrentPosition()
     return false;
   }
 
-  std::vector<uint16_t> raw_positions;
+  std::vector<int16_t> raw_positions;
   if (!robot_->readPositions(raw_positions)) {
     return false;
   }

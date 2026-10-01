@@ -40,8 +40,8 @@ namespace lerobot_ros2_control
 struct JointCalibration
 {
     std::string name;
-    uint16_t lower_position;
-    uint16_t upper_position;
+    int16_t lower_position;
+    int16_t upper_position;
     double lower_limit;
     double upper_limit;
 };
@@ -55,7 +55,7 @@ struct JointCalibration
  */
 [[nodiscard]] double rawToPosition(
     const JointCalibration & joint,
-    uint16_t raw_position);
+    int16_t raw_position);
 
 /**
  * @brief Converts a joint position to a raw motor position.
@@ -64,7 +64,7 @@ struct JointCalibration
  * @param position Joint position in radians.
  * @return Raw motor position.
  */
-[[nodiscard]] uint16_t positionToRaw(
+[[nodiscard]] int16_t positionToRaw(
     const JointCalibration & joint,
     double position);
 
