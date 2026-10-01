@@ -41,21 +41,56 @@ bool Motor::ping()
 }
 
 bool Motor::readPosition(
-  uint16_t & position)
+  int16_t & position)
 {
-  return bus_.readWord(
-    id_,
-    reg::kCurrentPosition,
-    position);
+  uint16_t raw_position{};
+
+  if (!bus_.readWord(
+      id_,
+      reg::kCurrentPosition,
+      raw_position))
+  {
+    return false;
+  }
+
+  position = decodePosition(raw_position);
+
+  return true;
 }
 
 bool Motor::writePosition(
-  uint16_t position)
+  int16_t position)
 {
   return bus_.writeWord(
     id_,
     reg::kTargetPosition,
-    position);
+    encodePosition(position));
+}
+
+uint16_t Motor::encodePosition(
+  int16_t position)
+{
+  const uint16_t magnitude =
+    static_cast<uint16_t>(
+    position < 0 ?
+    -static_cast<int32_t>(position) :
+    static_cast<int32_t>(position));
+
+  return position < 0 ?
+         static_cast<uint16_t>(0x8000U | magnitude) :
+         magnitude;
+}
+
+int16_t Motor::decodePosition(
+  uint16_t raw_position)
+{
+  const auto magnitude =
+    static_cast<int16_t>(
+    raw_position & 0x7FFFU);
+
+  return (raw_position & 0x8000U) != 0U ?
+         -magnitude :
+         magnitude;
 }
 
 bool Motor::setTorqueEnabled(

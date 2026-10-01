@@ -54,22 +54,40 @@ public:
   bool ping();
 
   /**
-   * @brief Reads the current raw servo position.
+   * @brief Reads the current servo position.
    *
-   * @param position Reference receiving the raw position.
+   * @param position Reference receiving the decoded position.
    * @return True if the position is read successfully, otherwise false.
    */
   bool readPosition(
-    uint16_t & position);
+    int16_t & position);
 
   /**
-   * @brief Writes a raw target position to the servo.
+   * @brief Writes a target position to the servo.
    *
-   * @param position Raw target position.
+   * @param position Decoded target position.
    * @return True if the position is written successfully, otherwise false.
    */
   bool writePosition(
-    uint16_t position);
+    int16_t position);
+
+  /**
+   * @brief Encodes a signed position using the servo sign-magnitude format.
+   *
+   * @param position Signed servo position.
+   * @return Encoded 16-bit register value.
+   */
+  [[nodiscard]] static uint16_t encodePosition(
+    int16_t position);
+
+  /**
+   * @brief Decodes a servo sign-magnitude position.
+   *
+   * @param raw_position Encoded 16-bit register value.
+   * @return Decoded signed servo position.
+   */
+  [[nodiscard]] static int16_t decodePosition(
+    uint16_t raw_position);
 
   /**
    * @brief Enables or disables servo torque.
