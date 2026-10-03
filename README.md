@@ -218,23 +218,102 @@ flowchart LR
     LR --> DR
 ```
 
-This keeps `lerobot_ros2_control` independent of the HiWonder servo protocol.
-Additional hardware backends can implement the same `lerobot::Robot` interface
-without modifying the generic ROS 2 control layer.
+This keeps `lerobot_ros2_control` independent of the HiWonder servo protocol and
+allows additional hardware backends to implement the same `lerobot::Robot`
+interface.
+
+## Packages
+
+| Package | Description |
+| --- | --- |
+| `hiwonder_servo_driver` | C++ driver for HiWonder bus servos. |
+| `lerobot_cpp` | Generic C++ interface for LeRobot hardware backends. |
+| `hiwonder_lerobot_cpp` | HiWonder implementation of the LeRobot interface. |
+| `lerobot_ros2_control` | Generic `ros2_control` hardware interface using a plugin-based robot backend. |
+| `so101_follower_description` | Robot description for the SO-101 follower. |
+| `lerobot_bringup` | Launch and configuration files for the robot. |
+
+## Installation
+
+### Manual Installation
+
+The project currently targets Ubuntu 24.04 and ROS 2 Jazzy.
+
+Create a ROS 2 workspace and clone the repository:
+
+```bash
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
+
+git clone https://github.com/KevinEppacher/hiwonder_ros2.git
+```
+
+Install the required ROS dependencies:
+
+```bash
+cd ~/ros2_ws
+
+rosdep install \
+    --from-paths src \
+    --ignore-src \
+    -r \
+    -y
+```
+
+Build the workspace:
+
+```bash
+colcon build --symlink-install
+```
+
+Source the workspace:
+
+```bash
+source install/setup.bash
+```
+
+### Docker Environment
+
+The repository provides a Docker environment with ROS 2 Jazzy and the required
+development dependencies.
+
+Clone the repository:
+
+```bash
+git clone https://github.com/KevinEppacher/hiwonder_ros2.git
+cd hiwonder_ros2
+```
+
+Start the container:
+
+```bash
+cd docker
+docker compose up -d hiwonder_container
+```
+
+Open a shell inside the running container:
+
+```bash
+docker compose exec hiwonder_container bash
+```
+
+The workspace is available inside the container under:
+
+```text
+/app
+```
 
 ## HiWonder Backend
 
-The HiWonder backend provides implementations for the LeRobot follower and
-leader interfaces.
-
-The currently available plugins are:
+The HiWonder backend currently provides plugins for the LeRobot follower and
+leader:
 
 ```text
 hiwonder_lerobot_cpp/Follower
 hiwonder_lerobot_cpp/Leader
 ```
 
-The SO-101 follower uses six HiWonder bus servos:
+The SO-101 follower uses six bus servos:
 
 | ID | Joint |
 | ---: | --- |
@@ -368,7 +447,7 @@ ros2 service call \
 ```
 
 When guiding mode is enabled, servo torque is disabled while the current joint
-positions continue to be read by the hardware interface.
+positions continue to be read.
 
 ## Docker Images
 
