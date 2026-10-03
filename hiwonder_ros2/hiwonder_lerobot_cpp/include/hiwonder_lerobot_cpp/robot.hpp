@@ -107,7 +107,7 @@ public:
    * @return True if all positions are read successfully, otherwise false.
    */
   bool readPositions(
-    std::vector<uint16_t> & positions) override;
+    std::vector<int16_t> & positions) override;
 
   /**
    * @brief Writes raw target positions to all motors.
@@ -116,7 +116,7 @@ public:
    * @return True if the positions are written successfully, otherwise false.
    */
   bool writePositions(
-    const std::vector<uint16_t> & positions) override;
+    const std::vector<int16_t> & positions) override;
 
   /**
    * @brief Writes raw target positions with movement parameters.
@@ -127,7 +127,7 @@ public:
    * @return True if the positions are written successfully, otherwise false.
    */
   bool writePositions(
-    const std::vector<uint16_t> & positions,
+    const std::vector<int16_t> & positions,
     uint16_t move_time_ms,
     uint16_t move_speed);
 

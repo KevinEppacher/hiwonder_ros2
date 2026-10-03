@@ -157,13 +157,13 @@ void LeRobot::addMotor(
 }
 
 bool LeRobot::writePositions(
-  const std::vector<uint16_t> & positions)
+  const std::vector<int16_t> & positions)
 {
   return writePositions(positions, 0, 0);
 }
 
 bool LeRobot::writePositions(
-  const std::vector<uint16_t> & positions,
+  const std::vector<int16_t> & positions,
   uint16_t move_time_ms,
   uint16_t move_speed)
 {
@@ -213,7 +213,7 @@ bool LeRobot::writePositions(
 }
 
 bool LeRobot::readPositions(
-  std::vector<uint16_t> & positions)
+  std::vector<int16_t> & positions)
 {
   if (!isConnected()) {
     return false;
