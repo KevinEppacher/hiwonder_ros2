@@ -15,7 +15,9 @@ services:
       - ../hiwonder_ros2:/app/src
       - /tmp/.X11-unix:/tmp/.X11-unix
     devices:
-      - /dev/ttyACM0:/dev/ttyACM0   # Forward usb ports
+      # Forward usb ports
+      - /dev/ttyACM0:/dev/ttyACM0
+      - /dev/ttyUSB1:/dev/ttyUSB1
     environment:
       QT_X11_NO_MITSHM: 1
       DISPLAY: $DISPLAY

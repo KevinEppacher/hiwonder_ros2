@@ -30,13 +30,13 @@ def generate_launch_description():
     # ---------------------- Paths ------------------------------#
 
     path_to_urdf = os.path.join(
-        get_package_share_directory("so101_follower_description"),
+        get_package_share_directory("so101_description"),
         "urdf",
         "so101_follower.urdf.xacro",
     )
 
     rviz_config_file = os.path.join(
-        get_package_share_directory("so101_follower_description"),
+        get_package_share_directory("so101_description"),
         "rviz",
         "rviz.rviz"
     )
