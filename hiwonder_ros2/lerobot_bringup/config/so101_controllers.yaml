@@ -1,4 +1,4 @@
-controller_manager:
+/**/controller_manager:
   ros__parameters:
     update_rate: 100
 
@@ -8,7 +8,7 @@ controller_manager:
     position_controller:
       type: forward_command_controller/ForwardCommandController
 
-position_controller:
+/**/position_controller:
   ros__parameters:
     joints:
       - shoulder_pan

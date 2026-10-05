@@ -33,7 +33,7 @@ def generate_launch_description():
     default_calibration_file = os.path.join(
         so101_description_share,
         "config",
-        "follower_example_calibration.yaml",
+        "leader_example_calibration.yaml",
     )
 
     controllers_file = os.path.join(
@@ -45,14 +45,14 @@ def generate_launch_description():
     rviz_config_file = os.path.join(
         so101_description_share,
         "rviz",
-        "follower.rviz",
+        "leader.rviz",
     )
 
     # ---------------------- Arguments ------------------------------#
 
     namespace_arg = DeclareLaunchArgument(
         "namespace",
-        default_value="follower",
+        default_value="leader",
         description="Namespace for the robot",
     )
 
@@ -93,7 +93,7 @@ def generate_launch_description():
                 " prefix:=",
                 namespace,
                 "_",
-                " robot_plugin:=hiwonder_lerobot_cpp/Follower",
+                " robot_plugin:=hiwonder_lerobot_cpp/Leader",
             ]
         ),
         value_type=str,

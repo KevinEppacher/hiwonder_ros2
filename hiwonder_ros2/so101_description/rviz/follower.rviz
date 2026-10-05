@@ -55,7 +55,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /robot_description
+        Value: /follower/robot_description
       Enabled: true
       Links:
         All Links Enabled: true
@@ -63,41 +63,51 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_link:
+        follower_base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        gripper_link:
+        follower_gripper_frame_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        follower_gripper_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        jaw_link:
+        follower_lower_arm_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        lower_arm_link:
+        follower_moving_jaw_so101_v1_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        shoulder_link:
+        follower_shoulder_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        upper_arm_link:
+        follower_upper_arm_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        world:
+        follower_wrist_camera_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        wrist_link:
+          Value: true
+        follower_wrist_camera_mount_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        follower_wrist_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -113,7 +123,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: base_link
+    Fixed Frame: follower_base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -156,25 +166,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 0.7427533268928528
+      Distance: 0.618607223033905
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.015767553821206093
-        Y: -0.07860524952411652
-        Z: 0.14299002289772034
+        X: 0.013481727801263332
+        Y: -0.08714029937982559
+        Z: 0.06792540848255157
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3303981423377991
+      Pitch: 0.4103981554508209
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.758584976196289
+      Yaw: 5.113585948944092
     Saved: ~
 Window Geometry:
   Displays:
