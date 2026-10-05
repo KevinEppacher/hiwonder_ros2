@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Leader -->
+  <arg name="leader_port" default="/dev/ttyACM1"/>
+  <arg
+    name="leader_calibration_path"
+    default="$(find-pkg-share so101_description)/config/leader_example_calibration.yaml"
+  />
+
+  <!-- Follower -->
+  <arg name="follower_port" default="/dev/ttyACM0"/>
+  <arg
+    name="follower_calibration_path"
+    default="$(find-pkg-share so101_description)/config/follower_example_calibration.yaml"
+  />
+
+  <!-- Visualization -->
+  <arg name="gui" default="false"/>
+
+  <!-- Leader -->
+  <include file="$(find-pkg-share lerobot_bringup)/launch/so101_leader_bringup.launch.py">
+    <arg name="namespace" value="leader"/>
+    <arg name="port" value="$(var leader_port)"/>
+    <arg name="calibration_path" value="$(var leader_calibration_path)"/>
+    <arg name="gui" value="$(var gui)"/>
+  </include>
+
+  <!-- Follower -->
+  <include file="$(find-pkg-share lerobot_bringup)/launch/so101_follower_bringup.launch.py">
+    <arg name="namespace" value="follower"/>
+    <arg name="port" value="$(var follower_port)"/>
+    <arg name="calibration_path" value="$(var follower_calibration_path)"/>
+    <arg name="gui" value="false"/>
+  </include>
+
+</launch>
