@@ -1,9 +1,10 @@
 services:
-  so101_bringup_service:
+  so101_bringup:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
     network_mode: host
     devices:
       - /dev/ttyACM0:/dev/ttyACM0
+      - /dev/ttyACM1:/dev/ttyACM1
     volumes:
       - ./config:/config:ro
     command:
@@ -11,9 +12,12 @@ services:
         "ros2",
         "launch",
         "lerobot_bringup",
-        "so101_follower_bringup.launch.py",
-        "port:=/dev/ttyACM0",
-        "calibration_path:=/config/so101_follower_calibration.yaml"
+        "so101_bringup.launch.xml",
+        "leader_port:=/dev/ttyACM1",
+        "follower_port:=/dev/ttyACM0",
+        "leader_calibration_path:=/config/leader_example_calibration.yaml",
+        "follower_calibration_path:=/config/follower_example_calibration.yaml",
+        "gui:=false"
       ]
 
   hiwonder-scan:
@@ -49,7 +53,7 @@ services:
       [
         "lerobot-calibrate",
         "/dev/ttyACM0",
-        "/config/so101_follower_calibration.yaml"
+        "/config/follower_example_calibration.yaml"
       ]
 
   lerobot-test-move:
