@@ -58,6 +58,15 @@ target_link_libraries(hiwonder-setup-motors
         ${PROJECT_NAME}
 )
 
+add_executable(hiwonder-position-debug
+    tools/position_debug.cpp
+)
+
+target_link_libraries(hiwonder-position-debug
+    PRIVATE
+        ${PROJECT_NAME}
+)
+
 ############################################################
 # Installation
 ############################################################
@@ -75,6 +84,7 @@ install(
         hiwonder-find-port
         hiwonder-scan
         hiwonder-setup-motors
+        hiwonder-position-debug
     RUNTIME DESTINATION bin
 )
 

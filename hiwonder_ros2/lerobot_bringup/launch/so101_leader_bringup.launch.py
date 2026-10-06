@@ -122,6 +122,7 @@ def generate_launch_description():
         executable="ros2_control_node",
         output="screen",
         namespace=namespace,
+        emulate_tty=True,
         parameters=[
             {
                 "robot_description": robot_description,

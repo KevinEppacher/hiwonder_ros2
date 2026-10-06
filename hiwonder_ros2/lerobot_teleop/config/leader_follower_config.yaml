@@ -1,0 +1,19 @@
+leader_follower_teleop_node:
+  ros__parameters:
+    update_rate: 50.0
+
+    leader_joint_states_topic: "/leader/joint_states"
+    follower_joint_states_topic: "/follower/joint_states"
+    follower_command_topic: "/follower/position_controller/commands"
+
+    guiding_mode_service: "/leader/leader_so101/guiding_mode"
+
+    initial_motion:
+      duration: 3.0
+
+    low_pass_filter:
+      enabled: true
+      cutoff_frequency: 1.0
+
+    safety:
+      leader_timeout: 0.2
