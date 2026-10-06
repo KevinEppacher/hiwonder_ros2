@@ -156,6 +156,14 @@ void LeRobot::addMotor(
   motor_ids_.push_back(id);
 }
 
+bool LeRobot::isValidCommandPosition(
+  int16_t position) noexcept
+{
+  return
+    position >= kMinCommandPosition &&
+    position <= kMaxCommandPosition;
+}
+
 bool LeRobot::writePositions(
   const std::vector<int16_t> & positions)
 {
@@ -175,6 +183,14 @@ bool LeRobot::writePositions(
     return false;
   }
 
+  if (!std::all_of(
+      positions.begin(),
+      positions.end(),
+      isValidCommandPosition))
+  {
+    return false;
+  }
+
   constexpr std::size_t kBytesPerMotor = 6;
 
   std::vector<uint8_t> ids;
@@ -189,24 +205,32 @@ bool LeRobot::writePositions(
     uint8_t * motor_data =
       data.data() + i * kBytesPerMotor;
 
-    const uint16_t raw_position =
-      Motor::encodePosition(positions[i]);
+    const auto raw_position =
+      static_cast<uint16_t>(positions[i]);
 
     motor_data[0] =
-      static_cast<uint8_t>(raw_position & 0xFFU);
+      static_cast<uint8_t>(
+      raw_position & 0xFFU);
 
     motor_data[1] =
-      static_cast<uint8_t>((raw_position >> 8) & 0xFFU);
+      static_cast<uint8_t>(
+      (raw_position >> 8) & 0xFFU);
 
     motor_data[2] =
-      static_cast<uint8_t>(move_time_ms & 0xFF);
+      static_cast<uint8_t>(
+      move_time_ms & 0xFFU);
+
     motor_data[3] =
-      static_cast<uint8_t>((move_time_ms >> 8) & 0xFF);
+      static_cast<uint8_t>(
+      (move_time_ms >> 8) & 0xFFU);
 
     motor_data[4] =
-      static_cast<uint8_t>(move_speed & 0xFF);
+      static_cast<uint8_t>(
+      move_speed & 0xFFU);
+
     motor_data[5] =
-      static_cast<uint8_t>((move_speed >> 8) & 0xFF);
+      static_cast<uint8_t>(
+      (move_speed >> 8) & 0xFFU);
   }
 
   return bus_->syncWrite(
@@ -232,6 +256,15 @@ bool LeRobot::readPositions(
   }
 
   return true;
+}
+
+bool LeRobot::validatePositions(
+  const std::vector<int16_t> & positions) const
+{
+  return std::all_of(
+    positions.begin(),
+    positions.end(),
+    isValidCommandPosition);
 }
 
 }  // namespace hiwonder

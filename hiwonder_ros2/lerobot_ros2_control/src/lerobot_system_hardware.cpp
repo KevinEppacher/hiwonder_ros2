@@ -397,6 +397,14 @@ LeRobotSystemHardware::write(const rclcpp::Time &, const rclcpp::Duration &)
     raw_positions.push_back(positionToRaw(joint, command));
   }
 
+  if (!robot_->validatePositions(raw_positions)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Joint command outside supported hardware range, holding position");
+
+    return hardware_interface::return_type::OK;
+  }
+
   if (!robot_->writePositions(raw_positions)) {
     RCLCPP_ERROR(get_logger(), "Failed to write synchronized joint positions");
     return hardware_interface::return_type::ERROR;
