@@ -104,6 +104,14 @@ public:
    */
   virtual bool writePositions(
     const std::vector<int16_t> & positions) = 0;
+
+  /**
+   * @brief Validates whether the given raw positions are within the supported range.
+   * @param positions Raw positions to validate.
+   * @return True if all positions are valid, otherwise false.
+   */
+  virtual bool validatePositions(
+    const std::vector<int16_t> & positions) const = 0;
 };
 
 }  // namespace lerobot

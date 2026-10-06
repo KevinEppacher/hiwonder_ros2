@@ -103,6 +103,8 @@ public:
   /**
    * @brief Reads the current raw positions of all motors.
    *
+   * Read positions are not restricted to the supported command range.
+   *
    * @param positions Vector receiving the motor positions.
    * @return True if all positions are read successfully, otherwise false.
    */
@@ -112,8 +114,12 @@ public:
   /**
    * @brief Writes raw target positions to all motors.
    *
+   * All positions must be within the supported servo command range.
+   * If any position is invalid, no command is sent.
+   *
    * @param positions Target positions for all motors.
-   * @return True if the positions are written successfully, otherwise false.
+   * @return True if the positions are valid and written successfully,
+   * otherwise false.
    */
   bool writePositions(
     const std::vector<int16_t> & positions) override;
@@ -121,15 +127,28 @@ public:
   /**
    * @brief Writes raw target positions with movement parameters.
    *
+   * All positions must be within the supported servo command range.
+   * If any position is invalid, no command is sent.
+   *
    * @param positions Target positions for all motors.
    * @param move_time_ms Movement duration in milliseconds.
    * @param move_speed Movement speed.
-   * @return True if the positions are written successfully, otherwise false.
+   * @return True if the positions are valid and written successfully,
+   * otherwise false.
    */
   bool writePositions(
     const std::vector<int16_t> & positions,
     uint16_t move_time_ms,
     uint16_t move_speed);
+
+  /**
+   * @brief Validates whether the given raw positions are within the supported range.
+   *
+   * @param positions Raw positions to validate.
+   * @return True if all positions are valid, otherwise false.
+   */
+  bool validatePositions(
+    const std::vector<int16_t> & positions) const override;
 
 protected:
   /**
@@ -141,6 +160,18 @@ protected:
     uint8_t id);
 
 private:
+  static constexpr int16_t kMinCommandPosition = 0;
+  static constexpr int16_t kMaxCommandPosition = 4095;
+
+  /**
+   * @brief Checks whether a raw position can be used as a servo target.
+   *
+   * @param position Raw target position.
+   * @return True if the position is within the supported command range.
+   */
+  [[nodiscard]] static bool isValidCommandPosition(
+    int16_t position) noexcept;
+
   std::string port_;
   uint32_t baud_rate_{1000000};
 
