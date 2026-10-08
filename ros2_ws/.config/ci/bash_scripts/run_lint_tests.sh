@@ -83,5 +83,9 @@ run_xmllint hiwonder_lerobot_cpp
 run_cpplint lerobot_ros2_control
 run_xmllint lerobot_ros2_control
 
+# Linter checks for lerobot_teleop
+run_cpplint lerobot_teleop
+run_xmllint lerobot_teleop
+
 echo
 echo -e "${BOLD}${GREEN}✓ All linter checks passed${RESET}"
