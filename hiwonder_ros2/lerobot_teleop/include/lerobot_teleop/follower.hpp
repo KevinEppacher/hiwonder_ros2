@@ -16,6 +16,7 @@
 
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -37,7 +38,7 @@ public:
   [[nodiscard]] bool controllerDiscovered() const noexcept;
 
   [[nodiscard]] const std::vector<std::string> &
-    commandJointNames() const noexcept;
+  commandJointNames() const noexcept;
 
   void startAlignment(
     const std::vector<double> & target);
@@ -48,8 +49,30 @@ public:
     const std::vector<double> & target);
 
 private:
+  [[nodiscard]] std::vector<std::string>
+  commandSubscribers() const;
+
+  [[nodiscard]] std::optional<std::string>
+  findCommandController();
+
   void requestControllerJoints(
     const std::string & controller_node);
+
+  void handleControllerJoints(
+    const std::string & controller_node,
+    const std::vector<rclcpp::Parameter> & parameters);
+
+  [[nodiscard]] bool validJointNames(
+    const std::vector<std::string> & joints) const;
+
+  [[nodiscard]] bool prepareAlignment(
+    const std::vector<double> & target);
+
+  [[nodiscard]] double alignmentProgress() const;
+
+  [[nodiscard]] std::vector<double>
+  alignmentCommand(
+    double progress) const;
 
   void publishCommand(
     const std::vector<double> & positions);
@@ -70,7 +93,7 @@ private:
     alignment_start_time_;
 
   std::shared_ptr<rclcpp::AsyncParametersClient>
-    parameter_client_;
+  parameter_client_;
 
   rclcpp::Publisher<
     std_msgs::msg::Float64MultiArray>::SharedPtr command_publisher_;

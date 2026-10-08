@@ -41,6 +41,7 @@ def generate_launch_description():
         name='leader_follower_teleop_node',
         namespace='',
         output='screen',
+        emulate_tty=True,
         parameters=[config_file],
     )
 

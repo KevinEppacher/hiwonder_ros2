@@ -75,7 +75,10 @@ if(BUILD_TESTING)
 
   ament_add_gtest(
     test_leader_follower_teleop
-    test/test_leader_follower_teleop.cpp
+    test/leader_follower_teleop_test_fixture.cpp
+    test/test_alignment.cpp
+    test/test_tracking.cpp
+    test/test_joint_mapping.cpp
     src/lerobot_teleop/leader_follower_teleop.cpp
     src/lerobot_teleop/follower.cpp
     src/lerobot_teleop/leader.cpp

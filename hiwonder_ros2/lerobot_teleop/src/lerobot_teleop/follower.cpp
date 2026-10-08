@@ -15,6 +15,7 @@
 #include "lerobot_teleop/follower.hpp"
 
 #include <algorithm>
+#include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -29,16 +30,18 @@ Follower::Follower(
     node,
     node.declare_parameter<std::string>(
       "follower.joint_state_topic",
-      "/follower/joint_states")),
-  command_topic_(
-    node.declare_parameter<std::string>(
-      "follower.command_topic",
-      "/follower/position_controller/commands")),
-  alignment_duration_(
-    node.declare_parameter<double>(
-      "follower.alignment_duration",
-      3.0))
+      "/follower/joint_states"))
 {
+  command_topic_ =
+    node_.declare_parameter<std::string>(
+    "follower.command_topic",
+    "/follower/position_controller/commands");
+
+  alignment_duration_ =
+    node_.declare_parameter<double>(
+    "follower.alignment_duration",
+    3.0);
+
   if (alignment_duration_ <= 0.0) {
     throw std::invalid_argument(
             "Follower alignment duration must be greater than zero");
@@ -61,16 +64,28 @@ bool Follower::discoverController()
     return false;
   }
 
-  const auto subscriptions =
-    node_.get_subscriptions_info_by_topic(
-    command_topic_);
+  const auto controller =
+    findCommandController();
 
-  if (subscriptions.empty()) {
+  if (!controller) {
     return false;
   }
 
+  requestControllerJoints(
+    *controller);
+
+  return false;
+}
+
+std::vector<std::string>
+Follower::commandSubscribers() const
+{
   std::unordered_set<std::string>
-    subscriber_nodes;
+  subscriber_nodes;
+
+  const auto subscriptions =
+    node_.get_subscriptions_info_by_topic(
+    command_topic_);
 
   for (const auto & subscription : subscriptions) {
     std::string node_name =
@@ -92,30 +107,31 @@ bool Follower::discoverController()
       std::move(node_name));
   }
 
-  if (subscriber_nodes.empty()) {
-    return false;
-  }
+  return {
+    subscriber_nodes.begin(),
+    subscriber_nodes.end()
+  };
+}
 
-  if (subscriber_nodes.size() > 1) {
+std::optional<std::string>
+Follower::findCommandController()
+{
+  const auto subscribers =
+    commandSubscribers();
+
+  if (subscribers.size() > 1) {
     RCLCPP_DEBUG(
       node_.get_logger(),
       "Found %zu subscribers on command topic '%s', searching for controller",
-      subscriber_nodes.size(),
+      subscribers.size(),
       command_topic_.c_str());
   }
 
-  /*
-   * A monitoring node may also subscribe to the command topic.
-   *
-   * Prefer subscribers exposing a parameter service. We query candidates
-   * one at a time. A controller is accepted only after its "joints"
-   * parameter has been received successfully.
-   */
-  for (const auto & subscriber_node : subscriber_nodes) {
+  for (const auto & subscriber : subscribers) {
     auto client =
       std::make_shared<rclcpp::AsyncParametersClient>(
       &node_,
-      subscriber_node);
+      subscriber);
 
     if (!client->service_is_ready()) {
       continue;
@@ -124,20 +140,17 @@ bool Follower::discoverController()
     parameter_client_ =
       std::move(client);
 
-    discovery_in_progress_ = true;
-
-    requestControllerJoints(
-      subscriber_node);
-
-    return false;
+    return subscriber;
   }
 
-  return false;
+  return std::nullopt;
 }
 
 void Follower::requestControllerJoints(
   const std::string & controller_node)
 {
+  discovery_in_progress_ = true;
+
   parameter_client_->get_parameters(
     {"joints"},
     [this, controller_node](
@@ -146,61 +159,72 @@ void Follower::requestControllerJoints(
     {
       discovery_in_progress_ = false;
 
-      const auto parameters =
-        future.get();
-
-      if (parameters.size() != 1) {
-        parameter_client_.reset();
-        return;
-      }
-
-      const auto & parameter =
-        parameters.front();
-
-      if (
-        parameter.get_type() !=
-        rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
-      {
-        parameter_client_.reset();
-        return;
-      }
-
-      const auto joints =
-        parameter.as_string_array();
-
-      if (joints.empty()) {
-        parameter_client_.reset();
-        return;
-      }
-
-      std::unordered_set<std::string>
-        unique_joints;
-
-      for (const auto & joint : joints) {
-        if (
-          joint.empty() ||
-          !unique_joints.insert(joint).second)
-        {
-          RCLCPP_ERROR(
-            node_.get_logger(),
-            "Controller '%s' contains invalid or duplicate joint names",
-            controller_node.c_str());
-
-          parameter_client_.reset();
-          return;
-        }
-      }
-
-      command_joint_names_ =
-        joints;
-
-      RCLCPP_INFO(
-        node_.get_logger(),
-        "Discovered controller '%s' with %zu command joints",
-        controller_node.c_str(),
-        command_joint_names_.size());
+      handleControllerJoints(
+        controller_node,
+        future.get());
 
       parameter_client_.reset();
+    });
+}
+
+void Follower::handleControllerJoints(
+  const std::string & controller_node,
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  if (parameters.size() != 1) {
+    return;
+  }
+
+  const auto & parameter =
+    parameters.front();
+
+  if (
+    parameter.get_type() !=
+    rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
+  {
+    return;
+  }
+
+  const auto joints =
+    parameter.as_string_array();
+
+  if (!validJointNames(joints)) {
+    RCLCPP_ERROR(
+      node_.get_logger(),
+      "Controller '%s' contains invalid or duplicate joint names",
+      controller_node.c_str());
+
+    return;
+  }
+
+  command_joint_names_ =
+    joints;
+
+  RCLCPP_INFO(
+    node_.get_logger(),
+    "Discovered controller '%s' with %zu command joints",
+    controller_node.c_str(),
+    command_joint_names_.size());
+}
+
+bool Follower::validJointNames(
+  const std::vector<std::string> & joints) const
+{
+  if (joints.empty()) {
+    return false;
+  }
+
+  std::unordered_set<std::string>
+  unique_joints;
+
+  return std::all_of(
+    joints.begin(),
+    joints.end(),
+    [&unique_joints](const auto & joint)
+    {
+      return
+        !joint.empty() &&
+        unique_joints.insert(joint).second;
     });
 }
 
@@ -218,36 +242,8 @@ Follower::commandJointNames() const noexcept
 void Follower::startAlignment(
   const std::vector<double> & target)
 {
-  if (!controllerDiscovered()) {
+  if (!prepareAlignment(target)) {
     aligning_ = false;
-
-    RCLCPP_ERROR(
-      node_.get_logger(),
-      "Cannot start alignment before controller discovery");
-
-    return;
-  }
-
-  if (!positions(
-      command_joint_names_,
-      alignment_start_))
-  {
-    aligning_ = false;
-
-    RCLCPP_ERROR(
-      node_.get_logger(),
-      "Failed to map follower joint positions");
-
-    return;
-  }
-
-  if (alignment_start_.size() != target.size()) {
-    aligning_ = false;
-
-    RCLCPP_ERROR(
-      node_.get_logger(),
-      "Follower alignment target size does not match controller joint count");
-
     return;
   }
 
@@ -260,23 +256,77 @@ void Follower::startAlignment(
   aligning_ = true;
 }
 
+bool Follower::prepareAlignment(
+  const std::vector<double> & target)
+{
+  if (!controllerDiscovered()) {
+    RCLCPP_ERROR(
+      node_.get_logger(),
+      "Cannot start alignment before controller discovery");
+
+    return false;
+  }
+
+  if (!positions(
+      command_joint_names_,
+      alignment_start_))
+  {
+    RCLCPP_ERROR(
+      node_.get_logger(),
+      "Failed to map follower joint positions");
+
+    return false;
+  }
+
+  if (alignment_start_.size() != target.size()) {
+    RCLCPP_ERROR(
+      node_.get_logger(),
+      "Follower alignment target size does not match controller joint count");
+
+    return false;
+  }
+
+  return true;
+}
+
 bool Follower::updateAlignment()
 {
   if (!aligning_) {
     return true;
   }
 
+  const double progress =
+    alignmentProgress();
+
+  publishCommand(
+    alignmentCommand(progress));
+
+  if (progress < 1.0) {
+    return false;
+  }
+
+  aligning_ = false;
+
+  return true;
+}
+
+double Follower::alignmentProgress() const
+{
   const double elapsed =
     std::chrono::duration<double>(
     std::chrono::steady_clock::now() -
     alignment_start_time_).count();
 
-  const double progress =
-    std::clamp(
+  return std::clamp(
     elapsed / alignment_duration_,
     0.0,
     1.0);
+}
 
+std::vector<double>
+Follower::alignmentCommand(
+  double progress) const
+{
   std::vector<double> command(
     alignment_target_.size());
 
@@ -288,16 +338,7 @@ bool Follower::updateAlignment()
       alignment_start_[i]);
   }
 
-  publishCommand(
-    command);
-
-  if (progress < 1.0) {
-    return false;
-  }
-
-  aligning_ = false;
-
-  return true;
+  return command;
 }
 
 void Follower::track(
