@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lerobot_teleop/leader_follower_teleop.hpp"
-
-#include <algorithm>
-#include <cmath>
+#include <chrono>
 #include <functional>
-#include <utility>
-#include <numbers>
+#include <memory>
+#include <string>
+
+#include "lerobot_teleop/leader_follower_teleop.hpp"
 
 namespace lerobot_teleop
 {
@@ -27,7 +26,9 @@ LeaderFollowerTeleop::LeaderFollowerTeleop(
   const rclcpp::NodeOptions & options)
 : LifecycleNode("leader_follower_teleop_node", options)
 {
-  declare_parameter("update_rate", 50.0);
+  declare_parameter(
+    "update_rate",
+    50.0);
 
   declare_parameter(
     "leader_joint_states_topic",
@@ -60,6 +61,17 @@ LeaderFollowerTeleop::LeaderFollowerTeleop(
   declare_parameter(
     "safety.leader_timeout",
     0.2);
+
+  declare_parameter<std::vector<std::string>>(
+  "follower.joints",
+  {
+    "shoulder_pan",
+    "shoulder_lift",
+    "elbow_flex",
+    "wrist_flex",
+    "wrist_roll",
+    "gripper"
+  });
 }
 
 LeaderFollowerTeleop::CallbackReturn
@@ -69,35 +81,51 @@ LeaderFollowerTeleop::on_configure(
   update_rate_ =
     get_parameter("update_rate").as_double();
 
-  leader_joint_states_topic_ =
-    get_parameter("leader_joint_states_topic").as_string();
+  const LeaderParameters leader_parameters{
+    .joint_states_topic =
+      get_parameter(
+      "leader_joint_states_topic").as_string(),
 
-  follower_joint_states_topic_ =
-    get_parameter("follower_joint_states_topic").as_string();
+    .guiding_mode_service =
+      get_parameter(
+      "guiding_mode_service").as_string(),
 
-  follower_command_topic_ =
-    get_parameter("follower_command_topic").as_string();
+    .timeout =
+      get_parameter(
+      "safety.leader_timeout").as_double()
+  };
 
-  guiding_mode_service_ =
-    get_parameter("guiding_mode_service").as_string();
+  const FollowerParameters follower_parameters{
+    .joint_states_topic =
+      get_parameter(
+      "follower_joint_states_topic").as_string(),
 
-  initial_motion_duration_ =
-    get_parameter("initial_motion.duration").as_double();
+    .command_topic =
+      get_parameter(
+      "follower_command_topic").as_string(),
 
-  low_pass_filter_enabled_ =
-    get_parameter("low_pass_filter.enabled").as_bool();
+    .joints =
+      get_parameter(
+      "follower.joints").as_string_array(),
 
-  cutoff_frequency_ =
-    get_parameter("low_pass_filter.cutoff_frequency").as_double();
+    .alignment_duration =
+      get_parameter(
+      "initial_motion.duration").as_double()
+  };
 
-  leader_timeout_ =
-    get_parameter("safety.leader_timeout").as_double();
+  const bool low_pass_filter_enabled =
+    get_parameter(
+    "low_pass_filter.enabled").as_bool();
+
+  const double cutoff_frequency =
+    get_parameter(
+    "low_pass_filter.cutoff_frequency").as_double();
 
   if (
     update_rate_ <= 0.0 ||
-    initial_motion_duration_ <= 0.0 ||
-    cutoff_frequency_ <= 0.0 ||
-    leader_timeout_ <= 0.0)
+    leader_parameters.timeout <= 0.0 ||
+    follower_parameters.alignment_duration <= 0.0 ||
+    cutoff_frequency <= 0.0)
   {
     RCLCPP_ERROR(
       get_logger(),
@@ -106,52 +134,48 @@ LeaderFollowerTeleop::on_configure(
     return CallbackReturn::FAILURE;
   }
 
-  const double dt = 1.0 / update_rate_;
-  const double rc =
-    1.0 / (2.0 * std::numbers::pi * cutoff_frequency_);
+  joint_names_ =
+    get_parameter(
+    "follower.joints").as_string_array();
 
-  filter_alpha_ = dt / (rc + dt);
+  if (joint_names_.empty()) {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Follower joint list must not be empty");
 
-  leader_joint_state_subscription_ =
-    create_subscription<sensor_msgs::msg::JointState>(
-    leader_joint_states_topic_,
-    rclcpp::SensorDataQoS(),
-    std::bind(
-      &LeaderFollowerTeleop::leaderJointStateCallback,
-      this,
-      std::placeholders::_1));
+    return CallbackReturn::FAILURE;
+  }
 
-  follower_joint_state_subscription_ =
-    create_subscription<sensor_msgs::msg::JointState>(
-    follower_joint_states_topic_,
-    rclcpp::SensorDataQoS(),
-    std::bind(
-      &LeaderFollowerTeleop::followerJointStateCallback,
-      this,
-      std::placeholders::_1));
+  leader_ =
+    std::make_unique<Leader>(
+    *this,
+    leader_parameters);
 
-  command_publisher_ =
-    create_publisher<std_msgs::msg::Float64MultiArray>(
-    follower_command_topic_,
-    10);
+  follower_ =
+    std::make_unique<Follower>(
+    *this,
+    follower_parameters);
 
-  guiding_mode_client_ =
-    create_client<std_srvs::srv::SetBool>(
-    guiding_mode_service_);
+  low_pass_filter_ =
+    std::make_unique<LowPassFilter>(
+    update_rate_,
+    cutoff_frequency,
+    low_pass_filter_enabled);
 
   const auto period =
-    std::chrono::duration<double>(1.0 / update_rate_);
+    std::chrono::duration<double>(
+    1.0 / update_rate_);
 
-  update_timer_ = create_wall_timer(
-    std::chrono::duration_cast<std::chrono::nanoseconds>(period),
+  update_timer_ =
+    create_wall_timer(
+    std::chrono::duration_cast<
+      std::chrono::nanoseconds>(period),
     std::bind(
       &LeaderFollowerTeleop::update,
       this));
 
-  leader_state_received_ = false;
-  follower_state_received_ = false;
-  filter_initialized_ = false;
-  mode_ = Mode::kIdle;
+  state_manager_.transitionTo(
+    StateManager::State::kIdle);
 
   RCLCPP_INFO(
     get_logger(),
@@ -164,9 +188,8 @@ LeaderFollowerTeleop::CallbackReturn
 LeaderFollowerTeleop::on_activate(
   const rclcpp_lifecycle::State & state)
 {
-  command_publisher_->on_activate();
-
-  mode_ = Mode::kWaitingForJointStates;
+  state_manager_.transitionTo(
+    StateManager::State::kWaitingForJointStates);
 
   RCLCPP_INFO(
     get_logger(),
@@ -179,12 +202,21 @@ LeaderFollowerTeleop::CallbackReturn
 LeaderFollowerTeleop::on_deactivate(
   const rclcpp_lifecycle::State & state)
 {
-  mode_ = Mode::kIdle;
-  filter_initialized_ = false;
+  state_manager_.transitionTo(
+    StateManager::State::kIdle);
 
-  requestGuidingMode(false);
-
-  command_publisher_->on_deactivate();
+  if (leader_) {
+    leader_->setGuidingMode(
+      false,
+      [this](bool success)
+      {
+        if (!success) {
+          RCLCPP_ERROR(
+            get_logger(),
+            "Failed to disable leader guiding mode");
+        }
+      });
+  }
 
   RCLCPP_INFO(
     get_logger(),
@@ -197,174 +229,151 @@ LeaderFollowerTeleop::CallbackReturn
 LeaderFollowerTeleop::on_cleanup(
   const rclcpp_lifecycle::State &)
 {
-  update_timer_.reset();
-  guiding_mode_client_.reset();
-  command_publisher_.reset();
-  follower_joint_state_subscription_.reset();
-  leader_joint_state_subscription_.reset();
+  state_manager_.transitionTo(
+    StateManager::State::kIdle);
 
-  leader_state_received_ = false;
-  follower_state_received_ = false;
-  filter_initialized_ = false;
-  mode_ = Mode::kIdle;
+  update_timer_.reset();
+
+  low_pass_filter_.reset();
+  follower_.reset();
+  leader_.reset();
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Cleaned up leader-follower teleoperation");
 
   return CallbackReturn::SUCCESS;
 }
 
-void LeaderFollowerTeleop::leaderJointStateCallback(
-  const sensor_msgs::msg::JointState::SharedPtr msg)
-{
-  std::array<double, kJointCount> positions{};
-
-  if (!extractJointPositions(*msg, positions)) {
-    RCLCPP_WARN(
-      get_logger(),
-      "Leader JointState does not contain all required joints");
-
-    return;
-  }
-
-  leader_positions_ = positions;
-  leader_state_received_ = true;
-  last_leader_update_ = std::chrono::steady_clock::now();
-}
-
-void LeaderFollowerTeleop::followerJointStateCallback(
-  const sensor_msgs::msg::JointState::SharedPtr msg)
-{
-  std::array<double, kJointCount> positions{};
-
-  if (!extractJointPositions(*msg, positions)) {
-    RCLCPP_WARN(
-      get_logger(),
-      "Follower JointState does not contain all required joints");
-
-    return;
-  }
-
-  follower_positions_ = positions;
-  follower_state_received_ = true;
-}
-
-bool LeaderFollowerTeleop::extractJointPositions(
-  const sensor_msgs::msg::JointState & msg,
-  std::array<double, kJointCount> & positions) const
-{
-  if (msg.name.size() != msg.position.size()) {
-    return false;
-  }
-
-  for (std::size_t joint_index = 0;
-    joint_index < kJointCount;
-    ++joint_index)
-  {
-    const auto iterator =
-      std::find(
-      msg.name.begin(),
-      msg.name.end(),
-      kJointNames[joint_index]);
-
-    if (iterator == msg.name.end()) {
-      return false;
-    }
-
-    const auto index =
-      static_cast<std::size_t>(
-      std::distance(
-        msg.name.begin(),
-        iterator));
-
-    positions[joint_index] =
-      msg.position[index];
-  }
-
-  return true;
-}
-
 void LeaderFollowerTeleop::update()
 {
-  switch (mode_) {
-    case Mode::kWaitingForJointStates:
-      if (leader_state_received_ && follower_state_received_) {
-        alignment_start_positions_ =
-          follower_positions_;
-
-        alignment_target_positions_ =
-          leader_positions_;
-
-        alignment_start_time_ =
-          std::chrono::steady_clock::now();
-
-        mode_ = Mode::kAligning;
-
-        RCLCPP_INFO(
-          get_logger(),
-          "Leader and follower joint states received, starting alignment");
-      }
+  switch (state_manager_.state()) {
+    case StateManager::State::kWaitingForJointStates:
+      waitForJointStates();
       break;
 
-    case Mode::kAligning:
-      updateAlignment();
+    case StateManager::State::kAligning:
+      alignFollower();
       break;
 
-    case Mode::kTracking:
-      updateTracking();
+    case StateManager::State::kTracking:
+      trackLeader();
       break;
 
-    case Mode::kIdle:
-    case Mode::kWaitingForGuiding:
+    case StateManager::State::kIdle:
+    case StateManager::State::kWaitingForGuiding:
       break;
   }
 }
 
-void LeaderFollowerTeleop::updateAlignment()
+void LeaderFollowerTeleop::waitForJointStates()
 {
-  const auto now =
-    std::chrono::steady_clock::now();
-
-  const double elapsed =
-    std::chrono::duration<double>(
-    now - alignment_start_time_).count();
-
-  const double progress =
-    std::clamp(
-    elapsed / initial_motion_duration_,
-    0.0,
-    1.0);
-
-  std::array<double, kJointCount> command{};
-
-  for (std::size_t i = 0; i < kJointCount; ++i) {
-    command[i] =
-      alignment_start_positions_[i] +
-      progress *
-      (alignment_target_positions_[i] -
-      alignment_start_positions_[i]);
-  }
-
-  publishCommand(command);
-
-  if (progress < 1.0) {
+  if (
+    !leader_->stateReceived() ||
+    !follower_->stateReceived())
+  {
     return;
   }
 
-  initializeFilter(alignment_target_positions_);
+  if (!jointsMatch()) {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Leader and follower joint names do not match");
 
-  mode_ = Mode::kWaitingForGuiding;
+    state_manager_.transitionTo(
+      StateManager::State::kIdle);
 
-  requestGuidingMode(true);
+    return;
+  }
+
+  std::vector<double> leader_positions;
+
+  if (!leader_->positions(
+      joint_names_,
+      leader_positions))
+  {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Failed to map leader joint positions");
+
+    state_manager_.transitionTo(
+      StateManager::State::kIdle);
+
+    return;
+  }
+
+  follower_->startAlignment(
+    leader_positions);
+
+  state_manager_.transitionTo(
+    StateManager::State::kAligning);
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Leader and follower joint states received, starting alignment");
 }
 
-void LeaderFollowerTeleop::updateTracking()
+void LeaderFollowerTeleop::alignFollower()
 {
-  const auto now =
-    std::chrono::steady_clock::now();
+  if (!follower_->updateAlignment()) {
+    return;
+  }
 
-  const double leader_age =
-    std::chrono::duration<double>(
-    now - last_leader_update_).count();
+  std::vector<double> leader_positions;
 
-  if (leader_age > leader_timeout_) {
+  if (!leader_->positions(
+      joint_names_,
+      leader_positions))
+  {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Failed to map leader joint positions");
+
+    state_manager_.transitionTo(
+      StateManager::State::kIdle);
+
+    return;
+  }
+
+  low_pass_filter_->reset(
+    leader_positions);
+
+  state_manager_.transitionTo(
+    StateManager::State::kWaitingForGuiding);
+
+  const bool request_sent =
+    leader_->setGuidingMode(
+    true,
+    [this](bool success)
+    {
+      if (!success) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Failed to enable leader guiding mode");
+
+        state_manager_.transitionTo(
+          StateManager::State::kIdle);
+
+        return;
+      }
+
+      state_manager_.transitionTo(
+        StateManager::State::kTracking);
+
+      RCLCPP_INFO(
+        get_logger(),
+        "Leader guiding mode enabled, teleoperation started");
+    });
+
+  if (!request_sent) {
+    state_manager_.transitionTo(
+      StateManager::State::kIdle);
+  }
+}
+
+void LeaderFollowerTeleop::trackLeader()
+{
+  if (leader_->timedOut()) {
     RCLCPP_WARN_THROTTLE(
       get_logger(),
       *get_clock(),
@@ -374,106 +383,39 @@ void LeaderFollowerTeleop::updateTracking()
     return;
   }
 
-  std::array<double, kJointCount> command{};
+  std::vector<double> leader_positions;
 
-  applyLowPassFilter(
-    leader_positions_,
-    command);
-
-  publishCommand(command);
-}
-
-void LeaderFollowerTeleop::requestGuidingMode(
-  bool enabled)
-{
-  if (!guiding_mode_client_->service_is_ready()) {
-    RCLCPP_ERROR(
+  if (!leader_->positions(
+      joint_names_,
+      leader_positions))
+  {
+    RCLCPP_WARN_THROTTLE(
       get_logger(),
-      "Guiding mode service is not available");
+      *get_clock(),
+      1000,
+      "Failed to map leader joint positions");
 
-    mode_ = Mode::kIdle;
     return;
   }
 
-  auto request =
-    std::make_shared<std_srvs::srv::SetBool::Request>();
+  const auto target =
+    low_pass_filter_->filter(
+    leader_positions);
 
-  request->data = enabled;
-
-  guiding_mode_client_->async_send_request(
-    request,
-    [this, enabled](
-      rclcpp::Client<std_srvs::srv::SetBool>::SharedFuture future)
-    {
-      const auto response = future.get();
-
-      if (!response->success) {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Failed to set guiding mode: %s",
-          response->message.c_str());
-
-        mode_ = Mode::kIdle;
-        return;
-      }
-
-      if (enabled) {
-        mode_ = Mode::kTracking;
-
-        RCLCPP_INFO(
-          get_logger(),
-          "Leader guiding mode enabled, teleoperation started");
-      } else {
-        RCLCPP_INFO(
-          get_logger(),
-          "Leader guiding mode disabled");
-      }
-    });
+  follower_->track(target);
 }
 
-void LeaderFollowerTeleop::initializeFilter(
-  const std::array<double, kJointCount> & positions)
+bool LeaderFollowerTeleop::jointsMatch() const
 {
-  filtered_positions_ = positions;
-  filter_initialized_ = true;
+  std::vector<double> leader_positions;
+  std::vector<double> follower_positions;
+
+  return
+    leader_->positions(
+      joint_names_,
+      leader_positions) &&
+    follower_->positions(
+      joint_names_,
+      follower_positions);
 }
-
-void LeaderFollowerTeleop::applyLowPassFilter(
-  const std::array<double, kJointCount> & input,
-  std::array<double, kJointCount> & output)
-{
-  if (!low_pass_filter_enabled_) {
-    output = input;
-    return;
-  }
-
-  if (!filter_initialized_) {
-    initializeFilter(input);
-  }
-
-  for (std::size_t i = 0; i < kJointCount; ++i) {
-    filtered_positions_[i] +=
-      filter_alpha_ *
-      (input[i] - filtered_positions_[i]);
-
-    output[i] = filtered_positions_[i];
-  }
-}
-
-void LeaderFollowerTeleop::publishCommand(
-  const std::array<double, kJointCount> & positions)
-{
-  if (!command_publisher_->is_activated()) {
-    return;
-  }
-
-  std_msgs::msg::Float64MultiArray command;
-
-  command.data.assign(
-    positions.begin(),
-    positions.end());
-
-  command_publisher_->publish(command);
-}
-
 }  // namespace lerobot_teleop

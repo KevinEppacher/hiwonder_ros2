@@ -5,7 +5,6 @@ leader_follower_teleop_node:
     leader_joint_states_topic: "/leader/joint_states"
     follower_joint_states_topic: "/follower/joint_states"
     follower_command_topic: "/follower/position_controller/commands"
-
     guiding_mode_service: "/leader/leader_so101/guiding_mode"
 
     initial_motion:

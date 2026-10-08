@@ -28,6 +28,10 @@ find_package(std_srvs REQUIRED)
 add_executable(leader_follower_teleop
   src/leader_follower_teleop_node.cpp
   src/lerobot_teleop/leader_follower_teleop.cpp
+  src/lerobot_teleop/follower.cpp
+  src/lerobot_teleop/leader.cpp
+  src/lerobot_teleop/robot.cpp
+  src/lerobot_teleop/filters/low_pass_filter.cpp
 )
 
 target_include_directories(leader_follower_teleop
@@ -49,12 +53,32 @@ target_compile_features(leader_follower_teleop
     cxx_std_20
 )
 
+# Leader Mock Teleop Node
+
+add_executable(mock_teleop
+  src/mock_teleop.cpp
+)
+
+ament_target_dependencies(mock_teleop
+  rclcpp
+  sensor_msgs
+  std_msgs
+  std_srvs
+)
+
+target_compile_features(mock_teleop
+  PUBLIC
+    cxx_std_20
+)
+
 ############################################################
 # Installation
 ############################################################
 
 install(
-  TARGETS leader_follower_teleop
+  TARGETS
+    leader_follower_teleop
+    mock_teleop
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -64,7 +88,41 @@ install(
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+
   ament_lint_auto_find_test_dependencies()
+
+  ament_add_gtest(
+    test_leader_follower_teleop
+    test/test_leader_follower_teleop.cpp
+    src/lerobot_teleop/leader_follower_teleop.cpp
+    src/lerobot_teleop/follower.cpp
+    src/lerobot_teleop/leader.cpp
+    src/lerobot_teleop/robot.cpp
+    src/lerobot_teleop/filters/low_pass_filter.cpp
+  )
+
+  target_include_directories(
+    test_leader_follower_teleop
+    PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  )
+
+  ament_target_dependencies(
+    test_leader_follower_teleop
+    rclcpp
+    rclcpp_lifecycle
+    lifecycle_msgs
+    sensor_msgs
+    std_msgs
+    std_srvs
+  )
+
+  target_compile_features(
+    test_leader_follower_teleop
+    PUBLIC
+      cxx_std_20
+  )
 endif()
 
 ############################################################
