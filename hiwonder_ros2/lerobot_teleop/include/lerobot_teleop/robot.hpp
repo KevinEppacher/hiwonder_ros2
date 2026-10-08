@@ -16,14 +16,14 @@ class Robot
 public:
   Robot(
     rclcpp_lifecycle::LifecycleNode & node,
-    std::string joint_states_topic);
+    const std::string & joint_state_topic);
 
   virtual ~Robot() = default;
 
   [[nodiscard]] bool stateReceived() const noexcept;
 
   [[nodiscard]] const sensor_msgs::msg::JointState &
-  jointState() const noexcept;
+    jointState() const noexcept;
 
   [[nodiscard]] bool positions(
     const std::vector<std::string> & joint_names,
@@ -32,11 +32,11 @@ public:
   [[nodiscard]] double stateAge() const;
 
 protected:
-  virtual void jointStateCallback(
-    const sensor_msgs::msg::JointState::SharedPtr msg);
+  rclcpp_lifecycle::LifecycleNode & node_;
 
 private:
-  std::string joint_states_topic_;
+  void jointStateCallback(
+    const sensor_msgs::msg::JointState::SharedPtr msg);
 
   sensor_msgs::msg::JointState joint_state_;
 

@@ -3,19 +3,18 @@
 #include <algorithm>
 #include <functional>
 #include <limits>
-#include <utility>
 
 namespace lerobot_teleop
 {
 
 Robot::Robot(
   rclcpp_lifecycle::LifecycleNode & node,
-  std::string joint_states_topic)
-: joint_states_topic_(std::move(joint_states_topic))
+  const std::string & joint_state_topic)
+: node_(node)
 {
   subscription_ =
-    node.create_subscription<sensor_msgs::msg::JointState>(
-    joint_states_topic_,
+    node_.create_subscription<sensor_msgs::msg::JointState>(
+    joint_state_topic,
     rclcpp::SensorDataQoS(),
     std::bind(
       &Robot::jointStateCallback,
@@ -63,11 +62,6 @@ bool Robot::positions(
         joint_state_.name.begin(),
         it));
 
-    if (index >= joint_state_.position.size()) {
-      positions.clear();
-      return false;
-    }
-
     positions.push_back(
       joint_state_.position[index]);
   }
@@ -97,7 +91,6 @@ void Robot::jointStateCallback(
   }
 
   joint_state_ = *msg;
-
   state_received_ = true;
 
   last_update_ =

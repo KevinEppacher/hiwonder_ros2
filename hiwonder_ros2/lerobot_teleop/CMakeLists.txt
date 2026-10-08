@@ -53,24 +53,6 @@ target_compile_features(leader_follower_teleop
     cxx_std_20
 )
 
-# Leader Mock Teleop Node
-
-add_executable(mock_teleop
-  src/mock_teleop.cpp
-)
-
-ament_target_dependencies(mock_teleop
-  rclcpp
-  sensor_msgs
-  std_msgs
-  std_srvs
-)
-
-target_compile_features(mock_teleop
-  PUBLIC
-    cxx_std_20
-)
-
 ############################################################
 # Installation
 ############################################################
@@ -78,7 +60,6 @@ target_compile_features(mock_teleop
 install(
   TARGETS
     leader_follower_teleop
-    mock_teleop
   DESTINATION lib/${PROJECT_NAME}
 )
 

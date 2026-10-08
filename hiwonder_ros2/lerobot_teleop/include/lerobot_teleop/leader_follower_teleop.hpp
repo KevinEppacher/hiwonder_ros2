@@ -1,8 +1,14 @@
+// Copyright 2026 Kevin Eppacher
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+
 #pragma once
 
 #include <memory>
-#include <vector>
-#include <string>
 
 #include "lerobot_teleop/filters/low_pass_filter.hpp"
 #include "lerobot_teleop/follower.hpp"
@@ -42,7 +48,7 @@ private:
 
   void trackLeader();
 
-  bool jointsMatch() const;
+  [[nodiscard]] bool jointsMatch() const;
 
   double update_rate_{50.0};
 
@@ -51,7 +57,6 @@ private:
   std::unique_ptr<LowPassFilter> low_pass_filter_;
 
   StateManager state_manager_;
-  std::vector<std::string> joint_names_;
 
   rclcpp::TimerBase::SharedPtr update_timer_;
 };

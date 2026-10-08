@@ -1,14 +1,8 @@
-// Copyright 2026 Kevin Eppacher
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-
 #pragma once
 
 #include <vector>
+
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace lerobot_teleop
 {
@@ -17,9 +11,8 @@ class LowPassFilter
 {
 public:
   LowPassFilter(
-    double update_rate,
-    double cutoff_frequency,
-    bool enabled);
+    rclcpp_lifecycle::LifecycleNode & node,
+    double update_rate);
 
   void reset(
     const std::vector<double> & values);

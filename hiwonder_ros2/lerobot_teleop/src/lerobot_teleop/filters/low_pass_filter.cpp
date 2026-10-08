@@ -1,11 +1,3 @@
-// Copyright 2026 Kevin Eppacher
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-
 #include "lerobot_teleop/filters/low_pass_filter.hpp"
 
 #include <numbers>
@@ -16,11 +8,18 @@ namespace lerobot_teleop
 {
 
 LowPassFilter::LowPassFilter(
-  double update_rate,
-  double cutoff_frequency,
-  bool enabled)
-: enabled_(enabled)
+  rclcpp_lifecycle::LifecycleNode & node,
+  double update_rate)
+: enabled_(
+    node.declare_parameter<bool>(
+      "low_pass_filter.enabled",
+      true))
 {
+  const double cutoff_frequency =
+    node.declare_parameter<double>(
+    "low_pass_filter.cutoff_frequency",
+    1.0);
+
   if (update_rate <= 0.0) {
     throw std::invalid_argument(
             "Update rate must be greater than zero");

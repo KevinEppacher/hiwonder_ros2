@@ -12,66 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lerobot_teleop/leader_follower_teleop.hpp"
+
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <string>
-
-#include "lerobot_teleop/leader_follower_teleop.hpp"
+#include <vector>
 
 namespace lerobot_teleop
 {
 
 LeaderFollowerTeleop::LeaderFollowerTeleop(
   const rclcpp::NodeOptions & options)
-: LifecycleNode("leader_follower_teleop_node", options)
+: LifecycleNode(
+    "leader_follower_teleop_node",
+    options)
 {
-  declare_parameter(
+  declare_parameter<double>(
     "update_rate",
     50.0);
-
-  declare_parameter(
-    "leader_joint_states_topic",
-    "/leader/joint_states");
-
-  declare_parameter(
-    "follower_joint_states_topic",
-    "/follower/joint_states");
-
-  declare_parameter(
-    "follower_command_topic",
-    "/follower/position_controller/commands");
-
-  declare_parameter(
-    "guiding_mode_service",
-    "/leader/leader_so101/guiding_mode");
-
-  declare_parameter(
-    "initial_motion.duration",
-    3.0);
-
-  declare_parameter(
-    "low_pass_filter.enabled",
-    true);
-
-  declare_parameter(
-    "low_pass_filter.cutoff_frequency",
-    3.0);
-
-  declare_parameter(
-    "safety.leader_timeout",
-    0.2);
-
-  declare_parameter<std::vector<std::string>>(
-  "follower.joints",
-  {
-    "shoulder_pan",
-    "shoulder_lift",
-    "elbow_flex",
-    "wrist_flex",
-    "wrist_roll",
-    "gripper"
-  });
 }
 
 LeaderFollowerTeleop::CallbackReturn
@@ -79,88 +38,42 @@ LeaderFollowerTeleop::on_configure(
   const rclcpp_lifecycle::State &)
 {
   update_rate_ =
-    get_parameter("update_rate").as_double();
-
-  const LeaderParameters leader_parameters{
-    .joint_states_topic =
-      get_parameter(
-      "leader_joint_states_topic").as_string(),
-
-    .guiding_mode_service =
-      get_parameter(
-      "guiding_mode_service").as_string(),
-
-    .timeout =
-      get_parameter(
-      "safety.leader_timeout").as_double()
-  };
-
-  const FollowerParameters follower_parameters{
-    .joint_states_topic =
-      get_parameter(
-      "follower_joint_states_topic").as_string(),
-
-    .command_topic =
-      get_parameter(
-      "follower_command_topic").as_string(),
-
-    .joints =
-      get_parameter(
-      "follower.joints").as_string_array(),
-
-    .alignment_duration =
-      get_parameter(
-      "initial_motion.duration").as_double()
-  };
-
-  const bool low_pass_filter_enabled =
     get_parameter(
-    "low_pass_filter.enabled").as_bool();
+    "update_rate").as_double();
 
-  const double cutoff_frequency =
-    get_parameter(
-    "low_pass_filter.cutoff_frequency").as_double();
-
-  if (
-    update_rate_ <= 0.0 ||
-    leader_parameters.timeout <= 0.0 ||
-    follower_parameters.alignment_duration <= 0.0 ||
-    cutoff_frequency <= 0.0)
-  {
+  if (update_rate_ <= 0.0) {
     RCLCPP_ERROR(
       get_logger(),
-      "Teleop parameters must be greater than zero");
+      "Update rate must be greater than zero");
 
     return CallbackReturn::FAILURE;
   }
 
-  joint_names_ =
-    get_parameter(
-    "follower.joints").as_string_array();
+  try {
+    leader_ =
+      std::make_unique<Leader>(
+      *this);
 
-  if (joint_names_.empty()) {
+    follower_ =
+      std::make_unique<Follower>(
+      *this);
+
+    low_pass_filter_ =
+      std::make_unique<LowPassFilter>(
+      *this,
+      update_rate_);
+  } catch (const std::exception & exception) {
     RCLCPP_ERROR(
       get_logger(),
-      "Follower joint list must not be empty");
+      "Failed to configure teleoperation: %s",
+      exception.what());
+
+    leader_.reset();
+    follower_.reset();
+    low_pass_filter_.reset();
 
     return CallbackReturn::FAILURE;
   }
-
-  leader_ =
-    std::make_unique<Leader>(
-    *this,
-    leader_parameters);
-
-  follower_ =
-    std::make_unique<Follower>(
-    *this,
-    follower_parameters);
-
-  low_pass_filter_ =
-    std::make_unique<LowPassFilter>(
-    update_rate_,
-    cutoff_frequency,
-    low_pass_filter_enabled);
 
   const auto period =
     std::chrono::duration<double>(
@@ -275,10 +188,16 @@ void LeaderFollowerTeleop::waitForJointStates()
     return;
   }
 
+  if (!follower_->controllerDiscovered()) {
+    if (!follower_->discoverController()) {
+      return;
+    }
+  }
+
   if (!jointsMatch()) {
     RCLCPP_ERROR(
       get_logger(),
-      "Leader and follower joint names do not match");
+      "Leader and follower do not provide all controller joints");
 
     state_manager_.transitionTo(
       StateManager::State::kIdle);
@@ -289,7 +208,7 @@ void LeaderFollowerTeleop::waitForJointStates()
   std::vector<double> leader_positions;
 
   if (!leader_->positions(
-      joint_names_,
+      follower_->commandJointNames(),
       leader_positions))
   {
     RCLCPP_ERROR(
@@ -322,7 +241,7 @@ void LeaderFollowerTeleop::alignFollower()
   std::vector<double> leader_positions;
 
   if (!leader_->positions(
-      joint_names_,
+      follower_->commandJointNames(),
       leader_positions))
   {
     RCLCPP_ERROR(
@@ -386,7 +305,7 @@ void LeaderFollowerTeleop::trackLeader()
   std::vector<double> leader_positions;
 
   if (!leader_->positions(
-      joint_names_,
+      follower_->commandJointNames(),
       leader_positions))
   {
     RCLCPP_WARN_THROTTLE(
@@ -402,20 +321,29 @@ void LeaderFollowerTeleop::trackLeader()
     low_pass_filter_->filter(
     leader_positions);
 
-  follower_->track(target);
+  follower_->track(
+    target);
 }
 
 bool LeaderFollowerTeleop::jointsMatch() const
 {
+  const auto & command_joint_names =
+    follower_->commandJointNames();
+
+  if (command_joint_names.empty()) {
+    return false;
+  }
+
   std::vector<double> leader_positions;
   std::vector<double> follower_positions;
 
   return
     leader_->positions(
-      joint_names_,
+      command_joint_names,
       leader_positions) &&
     follower_->positions(
-      joint_names_,
+      command_joint_names,
       follower_positions);
 }
+
 }  // namespace lerobot_teleop
