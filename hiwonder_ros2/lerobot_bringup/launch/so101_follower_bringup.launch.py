@@ -58,8 +58,11 @@ def generate_launch_description():
 
     port_arg = DeclareLaunchArgument(
         "port",
-        default_value="/dev/ttyACM0",
-        description="Serial port of the HiWonder servo bus",
+        default_value="/dev/ttyACM1",
+        description=(
+            "Serial port of the HiWonder servo bus. "
+            "Persistent /dev/serial/by-id/ paths are recommended."
+        ),
     )
 
     calibration_path_argument = DeclareLaunchArgument(
