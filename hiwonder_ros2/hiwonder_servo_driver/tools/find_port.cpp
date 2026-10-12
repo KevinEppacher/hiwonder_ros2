@@ -18,6 +18,7 @@
 #include <set>
 #include <string>
 #include <thread>
+#include <map>
 
 namespace fs = std::filesystem;
 
@@ -44,11 +45,38 @@ std::set<std::string> findAvailablePorts()
   return ports;
 }
 
+std::map<std::string, std::string> findPersistentPorts()
+{
+  std::map<std::string, std::string> ports;
+
+  const fs::path by_id_root{"/dev/serial/by-id"};
+
+  if (!fs::exists(by_id_root)) {
+    return ports;
+  }
+
+  for (const auto & entry : fs::directory_iterator(by_id_root)) {
+    if (!entry.is_symlink()) {
+      continue;
+    }
+
+    std::error_code ec;
+    const fs::path resolved = fs::canonical(entry.path(), ec);
+
+    if (!ec) {
+      ports[resolved.string()] = entry.path().string();
+    }
+  }
+
+  return ports;
+}
+
 int main()
 {
   std::cout << "Finding all available ports for the Hiwonder servo bus.\n";
 
   const auto ports_before = findAvailablePorts();
+  const auto persistent_ports = findPersistentPorts();
   ports_before.empty() ? std::cout << "No ports found.\n" :
     std::cout << "Ports before disconnecting:\n";
 
@@ -75,10 +103,21 @@ int main()
   }
 
   if (difference.size() == 1) {
+    const std::string port = *difference.begin();
+
     std::cout
             << "The port of the Hiwonder servo bus is '"
-            << *difference.begin()
+            << port
             << "'\n";
+
+    const auto persistent_port = persistent_ports.find(port);
+
+    if (persistent_port != persistent_ports.end()) {
+      std::cout
+              << "Persistent device path: '"
+              << persistent_port->second
+              << "'\n";
+    }
 
     std::cout << "Reconnect the USB cable.\n";
     return 0;

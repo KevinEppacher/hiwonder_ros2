@@ -3,8 +3,8 @@ services:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
     network_mode: host
     devices:
-      - /dev/ttyACM0:/dev/ttyACM0
-      - /dev/ttyACM1:/dev/ttyACM1
+      - ${LEADER_PORT}:/dev/so101_leader
+      - ${FOLLOWER_PORT}:/dev/so101_follower
     volumes:
       - ./config:/config:ro
     command:
@@ -13,19 +13,12 @@ services:
         "launch",
         "lerobot_bringup",
         "so101_bringup.launch.xml",
-        "leader_port:=/dev/ttyACM1",
-        "follower_port:=/dev/ttyACM0",
+        "leader_port:=/dev/so101_leader",
+        "follower_port:=/dev/so101_follower",
         "leader_calibration_path:=/config/leader_example_calibration.yaml",
         "follower_calibration_path:=/config/follower_example_calibration.yaml",
         "gui:=false"
       ]
-
-  hiwonder-scan:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
-    network_mode: host
-    devices:
-      - /dev/ttyACM0:/dev/ttyACM0
-    command: ["hiwonder-scan", "/dev/ttyACM0"]
 
   hiwonder-find-port:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
@@ -35,37 +28,86 @@ services:
       - /dev:/dev
     command: ["hiwonder-find-port"]
 
-  hiwonder-setup-motors:
+  hiwonder-scan-leader:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
     network_mode: host
     devices:
-      - /dev/ttyACM0:/dev/ttyACM0
-    command: ["hiwonder-setup-motors", "/dev/ttyACM0"]
+      - ${LEADER_PORT}:/dev/hiwonder
+    command: ["hiwonder-scan", "/dev/hiwonder"]
 
-  lerobot-calibrate:
+  hiwonder-scan-follower:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
     network_mode: host
     devices:
-      - /dev/ttyACM0:/dev/ttyACM0
+      - ${FOLLOWER_PORT}:/dev/hiwonder
+    command: ["hiwonder-scan", "/dev/hiwonder"]
+
+  hiwonder-setup-motors-leader:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - ${LEADER_PORT}:/dev/hiwonder
+    command: ["hiwonder-setup-motors", "/dev/hiwonder"]
+
+  hiwonder-setup-motors-follower:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - ${FOLLOWER_PORT}:/dev/hiwonder
+    command: ["hiwonder-setup-motors", "/dev/hiwonder"]
+
+  lerobot-calibrate-leader:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - ${LEADER_PORT}:/dev/hiwonder
     volumes:
       - ./config:/config
     command:
       [
         "lerobot-calibrate",
-        "/dev/ttyACM0",
+        "/dev/hiwonder",
+        "/config/leader_example_calibration.yaml"
+      ]
+
+  lerobot-calibrate-follower:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - ${FOLLOWER_PORT}:/dev/hiwonder
+    volumes:
+      - ./config:/config
+    command:
+      [
+        "lerobot-calibrate",
+        "/dev/hiwonder",
         "/config/follower_example_calibration.yaml"
       ]
 
-  lerobot-test-move:
+  lerobot-test-move-leader:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
     network_mode: host
     devices:
-      - /dev/ttyACM0:/dev/ttyACM0
-    command: ["lerobot-test-move", "/dev/ttyACM0"]
+      - ${LEADER_PORT}:/dev/hiwonder
+    command: ["lerobot-test-move", "/dev/hiwonder"]
 
-  lerobot-torque-mode:
+  lerobot-test-move-follower:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
     network_mode: host
     devices:
-      - /dev/ttyACM0:/dev/ttyACM0
-    command: ["lerobot-torque-mode", "/dev/ttyACM0"]
+      - ${FOLLOWER_PORT}:/dev/hiwonder
+    command: ["lerobot-test-move", "/dev/hiwonder"]
+
+  lerobot-torque-mode-leader:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - ${LEADER_PORT}:/dev/hiwonder
+    command: ["lerobot-torque-mode", "/dev/hiwonder"]
+
+  lerobot-torque-mode-follower:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - ${FOLLOWER_PORT}:/dev/hiwonder
+    command: ["lerobot-torque-mode", "/dev/hiwonder"]
