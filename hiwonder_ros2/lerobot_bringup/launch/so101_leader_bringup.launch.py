@@ -59,7 +59,10 @@ def generate_launch_description():
     port_arg = DeclareLaunchArgument(
         "port",
         default_value="/dev/ttyACM0",
-        description="Serial port of the HiWonder servo bus",
+        description=(
+            "Serial port of the HiWonder servo bus. "
+            "Persistent /dev/serial/by-id/ paths are recommended."
+        ),
     )
 
     calibration_path_argument = DeclareLaunchArgument(
@@ -122,6 +125,7 @@ def generate_launch_description():
         executable="ros2_control_node",
         output="screen",
         namespace=namespace,
+        emulate_tty=True,
         parameters=[
             {
                 "robot_description": robot_description,
