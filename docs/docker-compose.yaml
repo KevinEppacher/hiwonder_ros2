@@ -1,7 +1,8 @@
 services:
-  so101_bringup:
+  so101-leader-follower-bringup:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
     network_mode: host
+    restart: unless-stopped
     devices:
       - ${LEADER_PORT}:/dev/so101_leader
       - ${FOLLOWER_PORT}:/dev/so101_follower
@@ -12,12 +13,25 @@ services:
         "ros2",
         "launch",
         "lerobot_bringup",
-        "so101_bringup.launch.xml",
+        "so101_leader_follower_bringup.launch.xml",
         "leader_port:=/dev/so101_leader",
         "follower_port:=/dev/so101_follower",
         "leader_calibration_path:=/config/leader_example_calibration.yaml",
         "follower_calibration_path:=/config/follower_example_calibration.yaml",
         "gui:=false"
+      ]
+
+  lerobot-teleop:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    depends_on:
+      - so101-leader-follower-bringup
+    command:
+      [
+        "ros2",
+        "launch",
+        "lerobot_teleop",
+        "leader_follower_teleop.launch.py"
       ]
 
   hiwonder-find-port:
