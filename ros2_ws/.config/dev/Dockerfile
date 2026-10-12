@@ -63,6 +63,11 @@ RUN sudo apt update && sudo apt install -y \
 RUN sudo apt update && sudo apt install -y \
     libyaml-cpp-dev
 
+# Install utils (plotjuggler, foxglove bridge)
+RUN sudo apt update && sudo apt install -y \
+    ros-${ROS_DISTRO}-plotjuggler-ros \
+    ros-${ROS_DISTRO}-foxglove-bridge
+
 ########################################################
 # End Custom installations
 ########################################################
