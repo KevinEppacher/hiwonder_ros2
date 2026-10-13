@@ -2,7 +2,6 @@ services:
   so101-leader-follower-bringup:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
     network_mode: host
-    restart: unless-stopped
     devices:
       - ${LEADER_PORT}:/dev/so101_leader
       - ${FOLLOWER_PORT}:/dev/so101_follower
@@ -23,11 +22,50 @@ services:
         "gui:=false"
       ]
 
+  so101-leader-bringup:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    devices:
+      - ${LEADER_PORT}:/dev/so101_leader
+    volumes:
+      - ./config:/config:ro
+    environment:
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
+    command:
+      [
+        "ros2",
+        "launch",
+        "lerobot_bringup",
+        "so101_leader_bringup.launch.py",
+        "port:=/dev/so101_leader",
+        "calibration_path:=/config/leader_example_calibration.yaml",
+        "gui:=false"
+      ]
+
+  so101-follower-bringup:
+    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    network_mode: host
+    restart: unless-stopped
+    devices:
+      - ${FOLLOWER_PORT}:/dev/so101_follower
+    volumes:
+      - ./config:/config:ro
+    environment:
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
+    command:
+      [
+        "ros2",
+        "launch",
+        "lerobot_bringup",
+        "so101_follower_bringup.launch.py",
+        "port:=/dev/so101_follower",
+        "calibration_path:=/config/follower_example_calibration.yaml",
+        "gui:=false"
+      ]
+
   lerobot-teleop:
     image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
     network_mode: host
-    depends_on:
-      - so101-leader-follower-bringup
     environment:
       RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
     command:
