@@ -47,10 +47,16 @@ ARG ROS_DISTRO
 
 WORKDIR /app
 
-# Install rosdep
+# Install rosdep and supported RMW implementations
 RUN apt-get update && apt-get install -y \
     python3-rosdep \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+    ros-${ROS_DISTRO}-rmw-fastrtps-cpp \
     && rm -rf /var/lib/apt/lists/*
+
+# Use Cyclone DDS by default.
+# Can be overridden at runtime with RMW_IMPLEMENTATION.
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # Copy package manifests for runtime dependency resolution
 COPY hiwonder_ros2/ /tmp/src/
