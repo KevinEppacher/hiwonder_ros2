@@ -68,11 +68,17 @@ RUN sudo apt update && sudo apt install -y \
     ros-${ROS_DISTRO}-plotjuggler-ros \
     ros-${ROS_DISTRO}-foxglove-bridge
 
+# Install DDS middleware
+RUN sudo apt update && sudo apt install -y \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+    ros-${ROS_DISTRO}-rmw-fastrtps-cpp
+
 ########################################################
 # End Custom installations
 ########################################################
 
-RUN sudo apt update && sudo apt upgrade -y
+# Use Cyclone DDS as the default ROS 2 middleware
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
 RUN echo "source install/setup.bash" >> ~/.bashrc
