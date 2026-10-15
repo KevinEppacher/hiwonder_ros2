@@ -119,6 +119,19 @@ if(BUILD_TESTING)
     target_link_libraries(test_hiwonder_bus
         ${PROJECT_NAME}
     )
+
+    # ------------------------------------------------------------
+    # Unit Tests for test_motor
+    # ------------------------------------------------------------
+
+    ament_add_gtest(test_motor
+        test/test_motor.cpp
+    )
+
+    target_link_libraries(test_motor
+        ${PROJECT_NAME}
+    )
+
 endif()
 
 ############################################################

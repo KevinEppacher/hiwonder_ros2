@@ -267,4 +267,28 @@ bool LeRobot::validatePositions(
     isValidCommandPosition);
 }
 
+bool LeRobot::readStates(
+  std::vector<lerobot::JointState> & states)
+{
+  if (!isConnected()) {
+    return false;
+  }
+
+  states.resize(motors_.size());
+
+  for (std::size_t i = 0; i < motors_.size(); ++i) {
+    MotorState motor_state;
+
+    if (!motors_[i]->readState(motor_state)) {
+      return false;
+    }
+
+    states[i].position = motor_state.position;
+    states[i].velocity = motor_state.velocity;
+    states[i].current = motor_state.current;
+  }
+
+  return true;
+}
+
 }  // namespace hiwonder

@@ -112,6 +112,14 @@ public:
     std::vector<int16_t> & positions) override;
 
   /**
+   * @brief Reads the current raw states of all motors.
+   * @param states Vector receiving the motor states (position, velocity, current).
+   * @return True if all states are read successfully, otherwise false.
+   */
+  bool readStates(
+    std::vector<lerobot::JointState> & states) override;
+
+  /**
    * @brief Writes raw target positions to all motors.
    *
    * All positions must be within the supported servo command range.

@@ -21,6 +21,13 @@
 namespace hiwonder
 {
 
+struct MotorState
+{
+  int16_t position{};
+  int16_t velocity{};
+  uint16_t current{};
+};
+
 /**
  * @brief Provides access to a single HiWonder bus servo.
  */
@@ -97,6 +104,22 @@ public:
    */
   bool setTorqueEnabled(
     bool enabled);
+
+  /**
+   * @brief Decodes a servo sign-magnitude velocity.
+   *
+   * @param raw_velocity Encoded 16-bit register value.
+   * @return Decoded signed servo velocity in ticks/second.
+   */
+  [[nodiscard]] static int16_t decodeVelocity(uint16_t raw_velocity);
+
+  /**
+   * @brief Reads the current servo state (position, velocity, current).
+   * @param state Reference receiving the decoded servo state.
+   * @return True if the state is read successfully, otherwise false.
+   */
+  bool readState(
+    MotorState & state);
 
 private:
   uint8_t id_;

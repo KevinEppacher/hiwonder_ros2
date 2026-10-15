@@ -23,6 +23,16 @@ namespace lerobot
 {
 
 /**
+ * @brief Represents the state of a single joint.
+ */
+struct JointState
+{
+  int16_t position{};
+  int16_t velocity{};
+  uint16_t current{};
+};
+
+/**
  * @brief Configuration parameters for a LeRobot backend.
  */
 struct RobotConfig
@@ -90,7 +100,7 @@ public:
   /**
    * @brief Reads the current raw positions of all motors.
    *
-   * @param positions Vector receiving the motor positions.
+   * @param positions Vector receiving the motor raw positions (ticks).
    * @return True if all positions are read successfully, otherwise false.
    */
   virtual bool readPositions(
@@ -112,6 +122,14 @@ public:
    */
   virtual bool validatePositions(
     const std::vector<int16_t> & positions) const = 0;
+
+  /**
+   * @brief Reads the current raw states of all motors.
+   * @param states Vector receiving the motor states (position, velocity, current).
+   * @return True if all states are read successfully, otherwise false.
+   */
+  virtual bool readStates(
+    std::vector<JointState> & states) = 0;
 };
 
 }  // namespace lerobot
