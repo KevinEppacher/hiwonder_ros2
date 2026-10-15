@@ -69,6 +69,25 @@ struct JointCalibration
     double position);
 
 /**
+ * @brief Converts a raw motor velocity to a calibrated joint velocity.
+ *
+ * @param joint Joint calibration data.
+ * @param raw_velocity Raw motor velocity.
+ * @return Joint velocity in radians per second.
+ */
+[[nodiscard]] double rawToVelocity(
+  const JointCalibration & joint,
+  int16_t raw_velocity);
+
+/**
+ * @brief Converts a raw motor current to a calibrated joint current.
+ *
+ * @param raw_current Raw motor current (mA).
+ * @return Joint current (A).
+ */
+[[nodiscard]] double rawToCurrent(uint16_t raw_current);
+
+/**
  * @brief Provides a ros2_control system interface for LeRobot hardware.
  */
 class LeRobotSystemHardware : public hardware_interface::SystemInterface

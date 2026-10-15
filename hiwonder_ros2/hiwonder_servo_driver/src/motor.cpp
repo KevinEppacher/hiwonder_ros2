@@ -81,6 +81,21 @@ uint16_t Motor::encodePosition(
          magnitude;
 }
 
+int16_t Motor::decodeVelocity(uint16_t raw_velocity)
+{
+  constexpr uint16_t kDirectionBit = 0x8000;
+  constexpr uint16_t kSpeedMask = 0x7FFF;
+
+  const int16_t speed =
+    static_cast<int16_t>(raw_velocity & kSpeedMask);
+
+  if ((raw_velocity & kDirectionBit) != 0) {
+    return -speed;
+  }
+
+  return speed;
+}
+
 int16_t Motor::decodePosition(
   uint16_t raw_position)
 {
@@ -104,6 +119,44 @@ bool Motor::setTorqueEnabled(
     id_,
     reg::kTorqueEnable,
     data);
+}
+
+bool Motor::readState(
+  MotorState & state)
+{
+  std::array<uint8_t, 4> motion_data{};
+
+  if (!bus_.read(
+      id_,
+      reg::kCurrentPosition,
+      motion_data))
+  {
+    return false;
+  }
+
+  const uint16_t raw_position =
+    static_cast<uint16_t>(motion_data[0]) |
+    (static_cast<uint16_t>(motion_data[1]) << 8);
+
+  const uint16_t raw_velocity =
+    static_cast<uint16_t>(motion_data[2]) |
+    (static_cast<uint16_t>(motion_data[3]) << 8);
+
+  uint16_t raw_current{};
+
+  if (!bus_.readWord(
+      id_,
+      reg::kCurrentCurrent,
+      raw_current))
+  {
+    return false;
+  }
+
+  state.position = decodePosition(raw_position);
+  state.velocity = decodeVelocity(raw_velocity);
+  state.current = raw_current;
+
+  return true;
 }
 
 }  // namespace hiwonder
