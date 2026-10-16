@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy ROS 2 packages
-COPY hiwonder_ros2/ /app/src/
+COPY lemotion/ /app/src/
 
 # Install package dependencies
 RUN rosdep update && \
@@ -59,7 +59,7 @@ RUN apt-get update && apt-get install -y \
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # Copy package manifests for runtime dependency resolution
-COPY hiwonder_ros2/ /tmp/src/
+COPY lemotion/ /tmp/src/
 
 # Install runtime dependencies
 RUN rosdep update && \
@@ -80,7 +80,7 @@ COPY --from=builder /app/install /app/install
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc && \
     echo "source /app/install/setup.bash" >> /root/.bashrc
 
-COPY ros2_ws/.config/cd/entrypoint.sh /entrypoint.sh
+COPY motion_ws/.config/cd/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
 

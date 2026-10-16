@@ -1,8 +1,8 @@
-name: Continuous Delivery
+name: Continuous Delivery (Vision)
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: kevineppacher/hiwonder_ros2
+  IMAGE_NAME: kevineppacher/lerobot-ros2-vision
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ on:
 
 jobs:
   docker:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
 
     permissions:
@@ -27,7 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -46,8 +46,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./ros2_ws/.config/cd/Dockerfile
+          file: ./vision_ws/.config/cd/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:jazzy
-

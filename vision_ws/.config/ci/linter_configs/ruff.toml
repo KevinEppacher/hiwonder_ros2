@@ -1,0 +1,17 @@
+line-length = 88
+indent-width = 4
+
+[lint]
+select = ["ALL"]
+ignore = [
+    "COM812",
+    "D203",
+    "D213",
+    "TID252",
+]
+
+[lint.flake8-annotations]
+allow-star-arg-any = true
+
+[lint.pydocstyle]
+convention = "google"

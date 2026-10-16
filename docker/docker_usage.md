@@ -1,4 +1,4 @@
-# hiwonder_ros2
+# lerobot_ros2
 
 ROS 2 workspace and Docker environment for Hiwonder ROS 2 development.
 
@@ -68,7 +68,7 @@ docker/docker_install.md
 Clone the repository:
 
 ```bash
-git clone --recurse-submodules https://github.com/KevinEppacher/hiwonder_ros2.git
+git clone --recurse-submodules https://github.com/KevinEppacher/lerobot_ros2.git
 ```
 
 Checkout the ROS 2 Jazzy branch:
@@ -84,7 +84,7 @@ git checkout jazzy
 Navigate to the Docker configuration directory:
 
 ```bash
-cd /path/to/repo/hiwonder_ros2/docker
+cd /path/to/repo/lerobot_ros2/docker
 ```
 
 ## Native Linux
@@ -144,7 +144,7 @@ colcon build --symlink-install
 
 
 ## Docker Containers:
-The hiwonder_ros2 folder contains general hiwonder packages, which are mounted to every container. Container specific packages are located within the same repspective folders.
+The `lemotion` folder contains the robot motion and control packages mounted into the development container. The `levision` folder is reserved for camera and vision packages.
 
 - **Manipulation Container**:
 
@@ -152,5 +152,4 @@ The docker manipulation container contains MoveIt2 specific package installs.
 - **Navigation Container**:
 
 The docker navigation container contains Nav2 specific package installs.
-
 

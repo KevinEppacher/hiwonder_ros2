@@ -1,6 +1,6 @@
 services:
   so101-leader-follower-bringup:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     restart: unless-stopped
     devices:
@@ -24,7 +24,7 @@ services:
       ]
 
   lerobot-teleop:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     depends_on:
       - so101-leader-follower-bringup
@@ -39,7 +39,7 @@ services:
       ]
 
   hiwonder-find-port:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     privileged: true
     volumes:
@@ -47,35 +47,35 @@ services:
     command: ["hiwonder-find-port"]
 
   hiwonder-scan-leader:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${LEADER_PORT}:/dev/hiwonder
     command: ["hiwonder-scan", "/dev/hiwonder"]
 
   hiwonder-scan-follower:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${FOLLOWER_PORT}:/dev/hiwonder
     command: ["hiwonder-scan", "/dev/hiwonder"]
 
   hiwonder-setup-motors-leader:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${LEADER_PORT}:/dev/hiwonder
     command: ["hiwonder-setup-motors", "/dev/hiwonder"]
 
   hiwonder-setup-motors-follower:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${FOLLOWER_PORT}:/dev/hiwonder
     command: ["hiwonder-setup-motors", "/dev/hiwonder"]
 
   lerobot-calibrate-leader:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${LEADER_PORT}:/dev/hiwonder
@@ -89,7 +89,7 @@ services:
       ]
 
   lerobot-calibrate-follower:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${FOLLOWER_PORT}:/dev/hiwonder
@@ -103,28 +103,28 @@ services:
       ]
 
   lerobot-test-move-leader:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${LEADER_PORT}:/dev/hiwonder
     command: ["lerobot-test-move", "/dev/hiwonder"]
 
   lerobot-test-move-follower:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${FOLLOWER_PORT}:/dev/hiwonder
     command: ["lerobot-test-move", "/dev/hiwonder"]
 
   lerobot-torque-mode-leader:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${LEADER_PORT}:/dev/hiwonder
     command: ["lerobot-torque-mode", "/dev/hiwonder"]
 
   lerobot-torque-mode-follower:
-    image: ghcr.io/kevineppacher/hiwonder_ros2:jazzy
+    image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
     network_mode: host
     devices:
       - ${FOLLOWER_PORT}:/dev/hiwonder
