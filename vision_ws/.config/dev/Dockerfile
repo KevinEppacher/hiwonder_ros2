@@ -19,6 +19,10 @@ USER $USERNAME
 
 RUN sudo apt-get update && sudo apt-get upgrade -y
 
+########################################################
+# Custom installations
+########################################################
+
 RUN sudo apt-get update && sudo apt-get install -y \
     ros-${ROS_DISTRO}-desktop \
     python3-pip \
@@ -29,7 +33,23 @@ ENV PIP_BREAK_SYSTEM_PACKAGES=1
 COPY requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
 
-RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc && \
-    echo "if [ -f install/setup.bash ]; then source install/setup.bash; fi" >> ~/.bashrc
+# Install DDS middleware
+RUN sudo apt update && sudo apt install -y \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+    ros-${ROS_DISTRO}-rmw-fastrtps-cpp
+
+RUN sudo apt update && sudo apt install -y \
+    ros-${ROS_DISTRO}-usb-cam
+
+########################################################
+# End Custom installations
+########################################################
+
+# Use Cyclone DDS as the default ROS 2 middleware
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
+RUN echo "source install/setup.bash" >> ~/.bashrc
+RUN echo "cd /app && source .bash_aliases" >> ~/.bashrc
 
 WORKDIR /app

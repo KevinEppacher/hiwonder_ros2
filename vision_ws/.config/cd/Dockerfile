@@ -1,5 +1,9 @@
 ARG ROS_DISTRO=jazzy
 
+########################################################
+# Builder
+########################################################
+
 FROM ros:${ROS_DISTRO}-ros-base AS builder
 
 ARG ROS_DISTRO
@@ -31,11 +35,22 @@ RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
         echo "No ROS packages found in levision; skipping dependency installation and build."; \
     fi
 
+########################################################
+# Runtime
+########################################################
+
 FROM ros:${ROS_DISTRO}-ros-base AS runtime
 
 ARG ROS_DISTRO
 
 WORKDIR /app
+
+# Install rosdep and supported RMW implementations
+RUN apt-get update && apt-get install -y \
+    python3-rosdep \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+    ros-${ROS_DISTRO}-rmw-fastrtps-cpp \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y \
     python3-rosdep \
