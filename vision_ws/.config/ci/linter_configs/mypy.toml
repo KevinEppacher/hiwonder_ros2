@@ -1,0 +1,30 @@
+[tool.mypy]
+local_partial_types = true
+strict = true
+strict_equality = true
+warn_unused_configs = false
+exclude = '''(?x)(
+    (^|.*/)test/|
+    (^|.*/).*\.launch\.py$|
+    (^|.*/)setup\.py$
+)'''
+
+[[tool.mypy.overrides]]
+module = [
+    "rclpy",
+    "rclpy.*",
+    "launch",
+    "launch.*",
+    "launch_ros",
+    "launch_ros.*",
+    "sensor_msgs",
+    "sensor_msgs.*",
+    "geometry_msgs",
+    "geometry_msgs.*",
+    "std_msgs",
+    "std_msgs.*",
+    "yaml",
+    "yaml.*",
+]
+ignore_missing_imports = true
+disable_error_code = ["attr-defined", "no-any-return", "no-untyped-call"]
