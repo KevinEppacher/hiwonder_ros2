@@ -33,6 +33,7 @@ services:
     volumes:
       - ../vision_ws:/app
       - ../levision:/app/src
+      - ../lemotion/lerobot_bringup:/app/src/lerobot_bringup
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev:/dev
     environment:
