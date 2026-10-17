@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     python3-rosdep \
     && rm -rf /var/lib/apt/lists/*
 
-COPY levision/ /app/src/
+COPY packages/levision/ /app/src/levision/
 
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
     mkdir -p /app/install && \
@@ -28,7 +28,7 @@ RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
             --merge-install \
             --cmake-args -DCMAKE_BUILD_TYPE=Release; \
     else \
-        echo "No ROS packages found in levision; skipping dependency installation and build."; \
+        echo "No ROS packages found in packages/levision; skipping dependency installation and build."; \
     fi
 
 FROM ros:${ROS_DISTRO}-ros-base AS runtime
@@ -37,11 +37,7 @@ ARG ROS_DISTRO
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    python3-rosdep \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY levision/ /tmp/src/
+COPY packages/levision/ /tmp/src/levision/
 
 RUN if find /tmp/src -name package.xml -print -quit | grep -q .; then \
         rosdep update && \
@@ -54,12 +50,12 @@ RUN if find /tmp/src -name package.xml -print -quit | grep -q .; then \
             -y && \
         rm -rf /var/lib/apt/lists/*; \
     else \
-        echo "No ROS packages found in levision; skipping runtime dependency installation."; \
+        echo "No ROS packages found in packages/levision; skipping runtime dependency installation."; \
     fi && \
     rm -rf /tmp/src
 
 COPY --from=builder /app/install /app/install
-COPY vision_ws/.config/cd/entrypoint.sh /entrypoint.sh
+COPY docker/deploy/entrypoint-vision.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh && \
     echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc && \

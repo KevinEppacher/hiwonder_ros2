@@ -6,7 +6,8 @@ RUN apt-get update && \
     apt-get install -y \
         python3-pip \
         python3-colcon-common-extensions \
-        ros-${ROS_DISTRO}-ament-lint && \
+        ros-${ROS_DISTRO}-ament-lint \
+        ros-${ROS_DISTRO}-usb-cam && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PIP_BREAK_SYSTEM_PACKAGES=1

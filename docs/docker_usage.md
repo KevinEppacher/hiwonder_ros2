@@ -15,7 +15,7 @@ The repository provides a reproducible development environment using Docker for 
 Follow the Docker installation instructions in:
 
 ```
-docker/docker_install.md
+docs/docker_install.md
 ```
 
 or refer to the official Docker documentation.
@@ -58,7 +58,7 @@ wsl.exe --install Ubuntu-24.04
 Enter the WSL environment and install Docker following the **Linux installation instructions** described in:
 
 ```
-docker/docker_install.md
+docs/docker_install.md
 ```
 
 ---
@@ -81,22 +81,16 @@ git checkout jazzy
 
 # 3. Start the Docker Environment
 
-Navigate to the Docker configuration directory:
+From the repository root, start the development containers with:
 
 ```bash
-cd /path/to/repo/lerobot_ros2/docker
+docker compose -f docker/dev/docker-compose.yaml up -d --build motion_container
 ```
 
-## Native Linux
+To start the vision development container instead:
 
 ```bash
-docker compose up -d --build ros2_manipulation
-```
-
-## Windows (WSL)
-
-```bash
-docker compose up -d --build ros2_manipulation_wsl
+docker compose -f docker/dev/docker-compose.yaml up -d --build vision_container
 ```
 
 ---
@@ -110,7 +104,7 @@ docker exec -it <container_name> bash
 Example:
 
 ```bash
-docker exec -it ros2_manipulation_container bash
+docker exec -it lerobot_ros2_motion_container bash
 ```
 
 ---
@@ -143,13 +137,6 @@ colcon build --symlink-install
 * CI/CD integration
 
 
-## Docker Containers:
-The `lemotion` folder contains the robot motion and control packages mounted into the development container. The `levision` folder is reserved for camera and vision packages.
-
-- **Manipulation Container**:
-
-The docker manipulation container contains MoveIt2 specific package installs.
-- **Navigation Container**:
-
-The docker navigation container contains Nav2 specific package installs.
-
+The development containers mount the appropriate workspace at `/app` and the
+repository's `packages/` directory at `/packages`. Workspace source links resolve
+to those mounts, so source files are shared without duplicating package contents.

@@ -2,6 +2,13 @@
 
 This guide describes how to configure and run the SO-101 leader/follower setup using Docker Compose.
 
+Run the deployment commands from `docker/deploy`, so Compose loads the deployment
+`.env` file automatically:
+
+```bash
+cd docker/deploy
+```
+
 ## 1. Find the USB device paths
 
 Connect one SO-101 robot to the computer and run:
@@ -82,7 +89,7 @@ docker compose run --rm lerobot-calibrate-leader
 The calibration is written to:
 
 ```text
-config/leader_example_calibration.yaml
+config/calibration/leader_example_calibration.yaml
 ```
 
 Calibrate the follower:
@@ -94,7 +101,7 @@ docker compose run --rm lerobot-calibrate-follower
 The calibration is written to:
 
 ```text
-config/follower_example_calibration.yaml
+config/calibration/follower_example_calibration.yaml
 ```
 
 ## 6. Test the robots
@@ -116,7 +123,7 @@ docker compose run --rm lerobot-test-move-follower
 After both robots are configured and calibrated, start the complete setup:
 
 ```bash
-docker compose up so101_bringup
+docker compose up so101-leader-follower-bringup
 ```
 
 The persistent host devices configured in `.env` are mapped to fixed device names inside the container:

@@ -2,17 +2,18 @@ services:
   motion_container:
     image: lerobot-ros2-motion-dev:jazzy
     build:
-      context: ../motion_ws/.config/dev
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: docker/dev/Dockerfile.motion
     container_name: lerobot_ros2_motion_container
     privileged: true
     network_mode: host
     command: /bin/bash
     tty: true
     ipc: host
+    working_dir: /app
     volumes:
-      - ../motion_ws:/app
-      - ../lemotion:/app/src
+      - ../../motion_ws:/app
+      - ../../packages:/packages
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev:/dev
     environment:
@@ -22,18 +23,18 @@ services:
   vision_container:
     image: lerobot-ros2-vision-dev:jazzy
     build:
-      context: ../vision_ws/.config/dev
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: docker/dev/Dockerfile.vision
     container_name: lerobot_ros2_vision_container
     privileged: true
     network_mode: host
     command: /bin/bash
     tty: true
     ipc: host
+    working_dir: /app
     volumes:
-      - ../vision_ws:/app
-      - ../levision:/app/src
-      - ../lemotion/lerobot_bringup:/app/src/lerobot_bringup
+      - ../../vision_ws:/app
+      - ../../packages:/packages
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev:/dev
     environment:

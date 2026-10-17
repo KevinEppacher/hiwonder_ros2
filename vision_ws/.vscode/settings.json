@@ -1,5 +1,5 @@
 {
-    "cmake.sourceDirectory": "/app/src/hiwonder_servo_driver",
+    "cmake.sourceDirectory": "/app/src/lerobot_vision_bringup",
     "editor.tabSize": 2,
     "editor.insertSpaces": true    
 }
