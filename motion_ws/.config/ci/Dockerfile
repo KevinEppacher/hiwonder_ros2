@@ -2,6 +2,10 @@ ARG ROS_DISTRO=jazzy
 
 FROM ros:${ROS_DISTRO}-ros-core
 
+########################################################
+# Custom installations
+########################################################
+
 # Install python3-pip for installing Python packages with pip
 RUN apt update && \
     apt upgrade -y && \
@@ -40,6 +44,10 @@ RUN apt update && apt install -y \
     ros-${ROS_DISTRO}-ros2-controllers \
     ros-${ROS_DISTRO}-joint-trajectory-controller \
     libyaml-cpp-dev
+
+########################################################
+# End Custom installations
+########################################################
 
 RUN apt update && apt upgrade -y
 
