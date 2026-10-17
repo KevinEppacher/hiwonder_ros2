@@ -1,0 +1,13 @@
+{
+  mode: "router",
+
+  listen: {
+    endpoints: ["tcp/0.0.0.0:7447"]
+  },
+
+  plugins: {
+    ros2dds: {
+      nodename: "lerobot_robot_bridge"
+    }
+  }
+}
