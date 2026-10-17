@@ -17,7 +17,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy ROS 2 packages
-COPY lemotion/ /app/src/
+COPY packages/lemotion/ /app/src/lemotion/
+COPY packages/lemodel/ /app/src/lemodel/
+COPY packages/lebringup/ /app/src/lebringup/
 
 # Install package dependencies
 RUN rosdep update && \
@@ -59,7 +61,9 @@ RUN apt-get update && apt-get install -y \
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # Copy package manifests for runtime dependency resolution
-COPY lemotion/ /tmp/src/
+COPY packages/lemotion/ /tmp/src/lemotion/
+COPY packages/lemodel/ /tmp/src/lemodel/
+COPY packages/lebringup/ /tmp/src/lebringup/
 
 # Install runtime dependencies
 RUN rosdep update && \

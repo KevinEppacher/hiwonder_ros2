@@ -11,8 +11,10 @@ services:
     tty: true
     ipc: host
     volumes:
-      - ../motion_ws:/app
-      - ../lemotion:/app/src
+      - ../../motion_ws:/app
+      - ../../packages/lemotion:/app/src/lemotion
+      - ../../packages/lemodel:/app/src/lemodel
+      - ../../packages/lebringup:/app/src/lebringup
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev:/dev
     environment:
@@ -31,8 +33,8 @@ services:
     tty: true
     ipc: host
     volumes:
-      - ../vision_ws:/app
-      - ../levision:/app/src
+      - ../../vision_ws:/app
+      - ../../packages/levision:/app/src/levision
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev:/dev
     environment:

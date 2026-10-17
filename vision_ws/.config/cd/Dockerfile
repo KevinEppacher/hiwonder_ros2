@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y \
     python3-rosdep \
     && rm -rf /var/lib/apt/lists/*
 
-COPY levision/ /app/src/
+# Copy package manifests for runtime dependency resolution
+COPY packages/levision/ /app/src/levision/
 
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
     mkdir -p /app/install && \
@@ -56,13 +57,13 @@ RUN apt-get update && apt-get install -y \
     python3-rosdep \
     && rm -rf /var/lib/apt/lists/*
 
-COPY levision/ /tmp/src/
+COPY packages/levision/ /tmp/src/levision/
 
-RUN if find /tmp/src -name package.xml -print -quit | grep -q .; then \
+RUN if find /tmp/src/levision -name package.xml -print -quit | grep -q .; then \
         rosdep update && \
         apt-get update && \
         rosdep install \
-            --from-paths /tmp/src \
+            --from-paths /tmp/src/levision \
             --ignore-src \
             --rosdistro ${ROS_DISTRO} \
             -r \
