@@ -17,14 +17,26 @@ find_package(ament_cmake REQUIRED)
 find_package(usb_cam REQUIRED)
 
 ############################################################
-# Finalization
+# Install
 ############################################################
 
-# Install launch files
-install(DIRECTORY
-launch
-config
-DESTINATION share/${PROJECT_NAME}
+# Install launch files and configuration
+install(
+    DIRECTORY
+        launch
+        config
+    DESTINATION share/${PROJECT_NAME}
 )
+
+# Install command-line tools
+install(
+    PROGRAMS
+        scripts/lerobot-list-cameras
+    DESTINATION bin
+)
+
+############################################################
+# Finalization
+############################################################
 
 ament_package()

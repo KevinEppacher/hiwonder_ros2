@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+
+import glob
+import os
+import subprocess
+
+def run_v4l2(device, *args):
+    result = subprocess.run(
+        ["v4l2-ctl", "--device", device, *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout
+
+
+def get_device_name(device : str) -> str:
+    info = run_v4l2(device, "--all")
+    for line in info.splitlines():
+        if "Card type" in line:
+            return line.split(":", 1)[1].strip()
+    return "Unknown camera"
+
+
+def is_video_capture_device(device : str) -> bool:
+    formats = run_v4l2(device, "--list-formats-ext")
+    return bool(formats.strip())
+
+
+def get_stable_path(device : str) -> str | None:
+    for path in glob.glob("/dev/v4l/by-id/*"):
+        if os.path.realpath(path) == device:
+            return path
+    return None
+
+
+def main() -> None:
+    devices = sorted(glob.glob("/dev/video*"))
+
+    if not devices:
+        print("No cameras found.")
+        return
+
+    print("Available video devices:\n")
+
+    capture_devices = []
+
+    for device in devices:
+        name = get_device_name(device)
+        stable_path = get_stable_path(device)
+        is_capture = is_video_capture_device(device)
+
+        print(f"{device}")
+        print(f"  Camera: {name}")
+
+        if is_capture:
+            print("  Type: Video Capture")
+            capture_devices.append((device, stable_path))
+        else:
+            print("  Type: Metadata")
+
+        if stable_path:
+            print(f"  Stable path: {stable_path}")
+
+        print()
+
+    if capture_devices:
+        _, stable_path = capture_devices[0]
+
+        print("Recommended camera device:")
+
+        if stable_path:
+            print(f"  {stable_path}")
+        else:
+            print(f"  {capture_devices[0][0]}")
+
+
+if __name__ == "__main__":
+    main()
