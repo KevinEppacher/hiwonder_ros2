@@ -67,7 +67,7 @@ services:
     image: ghcr.io/kevineppacher/lerobot-ros2-vision:jazzy
     network_mode: host
     devices:
-      - ${FOLLOWER_VIDEO_DEVICE}:/dev/video_device
+      - ${FOLLOWER_VIDEO_DEVICE}:/dev/video0
     environment:
       RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
     command:
@@ -76,8 +76,16 @@ services:
         "launch",
         "lerobot_vision_bringup",
         "follower_camera_bringup.launch.py",
-        "video_device:=/dev/video_device",
+        "video_device:=/dev/video0"
       ]
+
+  lerobot-list-cameras:
+    image: ghcr.io/kevineppacher/lerobot-ros2-vision:jazzy
+    network_mode: host
+    privileged: true
+    volumes:
+      - /dev:/dev
+    command: ["lerobot-list-cameras"]
 
   lerobot-teleop:
     image: ghcr.io/kevineppacher/lerobot-ros2-motion:jazzy
