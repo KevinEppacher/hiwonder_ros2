@@ -26,11 +26,18 @@ set -u
 echo -e "${GREEN}✓ Workspace sourced${RESET}"
 echo
 
-check_path() {
-    if [ ! -d "$workspace_root/src/$1" ]; then
-        echo -e "${YELLOW}⚠ Package $1 does not exist. Skipping.${RESET}"
+return_path() {
+    local package="$1"
+    local package_path
+
+    package_path="$(colcon list | awk -v pkg="$package" '$1 == pkg { print $2; exit }')"
+
+    if [ -z "$package_path" ]; then
+        echo -e "${YELLOW}⚠ Package $package does not exist. Skipping.${RESET}" >&2
         return 1
     fi
+
+    echo "$workspace_root/$package_path"
 }
 
 run_linter() {
@@ -54,17 +61,23 @@ run_linter() {
 }
 
 run_xmllint() {
-    check_path "$1" || return
+    local package="$1"
+    local package_path
 
-    run_linter xmllint "$1" \
-        ament_xmllint "$workspace_root/src/$1"
+    package_path="$(return_path "$package")" || return
+
+    run_linter xmllint "$package" \
+        ament_xmllint "$package_path"
 }
 
 run_cpplint() {
-    check_path "$1" || return
+    local package="$1"
+    local package_path
 
-    run_linter cpplint "$1" \
-        ament_cpplint "$workspace_root/src/$1"
+    package_path="$(return_path "$package")" || return
+
+    run_linter cpplint "$package" \
+        ament_cpplint "$package_path"
 }
 
 # Linter checks for hiwonder_servo_driver
