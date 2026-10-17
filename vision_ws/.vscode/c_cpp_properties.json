@@ -1,0 +1,35 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/install/*/include",
+                "${workspaceFolder}/build/*/rosidl_generator_cpp",
+                "/opt/ros/jazzy/include/**",
+                "/usr/include/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c17",
+            "cppStandard": "gnu++20",
+            "intelliSenseMode": "linux-gcc-x64"
+        },
+        {
+            "name": "ros2",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/install/*/include",
+                "${workspaceFolder}/build/*/rosidl_generator_cpp",
+                "/base_ws/install/*/include",
+                "/opt/ros/jazzy/include/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c17",
+            "cppStandard": "gnu++20",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
